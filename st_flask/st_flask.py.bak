@@ -1,0 +1,125 @@
+from flask import Flask, request, jsonify, render_template
+import sqlite3
+import time
+import subprocess
+
+app = Flask(__name__)
+
+DATABASE = 'modems.db'
+latest_json_data = {}  # Global variable to store the latest JSON data
+
+def init_db():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS modems (
+            id INTEGER PRIMARY KEY,
+            modem_number INTEGER,
+            status TEXT,
+            error TEXT,
+            error_code INTEGER,
+            msisdn TEXT,
+            sent INTEGER,
+            modem_index_i2c INTEGER,
+            timestamp TEXT,
+            network TEXT,
+            use_call INTEGER,
+            use_sms INTEGER,
+            is_loopback_msisdn INTEGER,
+            model TEXT,
+            imei TEXT,
+            imsi TEXT,
+            registration_status TEXT,
+            operator TEXT,
+            rat TEXT,
+            arfcn TEXT,
+            bsic TEXT,
+            psc TEXT,
+            pci TEXT,
+            mcc TEXT,
+            mnc TEXT,
+            lac TEXT,
+            cell_id TEXT,
+            rssi TEXT,
+            snr TEXT,
+            call_result TEXT,
+            sms_result TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def insert_modem_data(modem_number, modem_data):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    # Convert epoch timestamp to human-readable format
+    readable_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(modem_data['ts']))
+    
+    cursor.execute('''
+        INSERT INTO modems (
+            modem_number, status, error, error_code, msisdn, sent, modem_index_i2c, 
+            timestamp, network, use_call, use_sms, is_loopback_msisdn, model, imei, 
+            imsi, registration_status, operator, rat, arfcn, bsic, psc, pci, mcc, 
+            mnc, lac, cell_id, rssi, snr, call_result, sms_result
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        modem_number, modem_data['status'], modem_data['error'], modem_data['error_code'], 
+        modem_data['msisdn'], modem_data['sent'], modem_data['modem_index_i2c'], readable_timestamp, 
+        modem_data['network'], modem_data['use_call'], modem_data['use_sms'], modem_data['is_loopback_msisdn'], 
+        modem_data['survey_results']['model'], modem_data['survey_results']['imei'], 
+        modem_data['survey_results']['imsi'], modem_data['survey_results']['registration_status'], 
+        modem_data['survey_results']['operator'], modem_data['survey_results']['rat'], 
+        modem_data['survey_results']['arfcn'], modem_data['survey_results']['bsic'], 
+        modem_data['survey_results']['psc'], modem_data['survey_results']['pci'], 
+        modem_data['survey_results']['mcc'], modem_data['survey_results']['mnc'], 
+        modem_data['survey_results']['lac'], modem_data['survey_results']['cell_id'], 
+        modem_data['survey_results']['rssi'], modem_data['survey_results']['snr'], 
+        modem_data['survey_results']['call_result'], modem_data['survey_results']['sms_result']
+    ))
+    
+    conn.commit()
+    conn.close()
+
+@app.route('/receive_json', methods=['POST'])
+def receive_json():
+    global latest_json_data
+    data = request.json
+    latest_json_data = data  # Update the global latest_json_data with the received JSON
+    senders = data.get('senders', {})
+
+    for modem_number, modem_data in senders.items():
+        insert_modem_data(modem_number, modem_data)
+
+    return jsonify({"status": "success"}), 200
+
+@app.route('/fetch_data', methods=['GET'])
+def fetch_data():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM modems')
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+@app.route('/latest_json', methods=['GET'])
+def latest_json():
+    return jsonify(latest_json_data)
+
+@app.route('/start_script', methods=['POST'])
+def start_script():
+    subprocess.Popen(['sudo', './st_simbox.py', 'st_simbox.ini'])
+    return jsonify({"status": "script started"})
+
+@app.route('/stop_script', methods=['POST'])
+def stop_script():
+    subprocess.Popen(['sudo', 'pkill', '-f', 'st_simbox.py'])
+    return jsonify({"status": "script stopped"})
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    init_db()  # Initialize the database when the app starts
+    app.run(host='0.0.0.0', port=8999)

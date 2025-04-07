@@ -1,0 +1,41 @@
+###In mariadb###
+
+
+
+###In sqlite###
+
+drop table modems;
+
+ CREATE TABLE modems (
+            id INTEGER PRIMARY KEY,
+            modem_number INTEGER,
+            status TEXT,
+            error TEXT,
+            error_code INTEGER,
+            msisdn TEXT,
+            sent INTEGER,
+            modem_index_i2c INTEGER,
+            timestamp TEXT,
+            network TEXT,
+            use_call INTEGER,
+            use_sms INTEGER,
+            is_loopback_msisdn INTEGER,
+            model TEXT,
+            imei TEXT,
+            imsi TEXT,
+            registration_status TEXT,
+            operator TEXT,
+            rat TEXT,
+            arfcn TEXT,
+            bsic TEXT,
+            psc TEXT,
+            pci TEXT,
+            mcc TEXT,
+            mnc TEXT,
+            lac TEXT,
+            cell_id TEXT,
+            rssi TEXT,
+            snr TEXT,
+            call_result TEXT,
+            sms_result TEXT
+        );

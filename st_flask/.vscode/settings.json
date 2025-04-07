@@ -1,0 +1,7 @@
+{
+    "terminal.integrated.scrollback": 200000,
+    "search.exclude": {
+        "**/.hg": true,
+        "**/*.log*": true
+    },
+}

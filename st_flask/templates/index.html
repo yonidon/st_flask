@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modem Status</title>
+
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Modem Status</h1>
+    
+    <div>
+        <!--<button id="startScript">Start Script</button>
+        <button id="stopScript">Stop Script</button>-->
+        <button id="toggleAutoRefresh">Toggle Auto-Refresh</button>
+        <button onclick="window.location.href='/edit_config'">Edit Configuration</button>
+        <button id="updateCallResultButton">Update call results</button>
+        <!--<p id="scriptStatus">Script Status: <span id="scriptStatusValue">Stopped</span></p>-->
+        <p id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue">On</span></p>
+    </div>
+    
+    <div class="modem-container" id="modemContainer">
+        <!-- Modem squares will be dynamically inserted here -->
+    </div>
+
+	<!-- <iframe
+    src="http://192.10.10.17:3000/public/dashboard/9bb36986-2784-4290-99a9-afc143f2163c#theme=night"
+    frameborder="0"
+    width="100%"
+    height="700"
+    ></iframe>
+    -->
+    <!-- Dynamic Table That shows sql data -->
+    <div class="table-container">
+        <table id="dataTable">
+            <thead>
+                <tr id="tableHeaders">
+                    <!-- Headers will be dynamically populated here -->
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be dynamically populated here -->
+            </tbody>
+        </table>
+    </div>   
+
+    <script>
+        let autoRefresh = true;
+        //let scriptRunning = false;
+        const fetchDataInterval = 1000; 
+        const updateCallResultInterval = 60000; //Interval for updating call result. Currently using the button instead
+
+
+        //Lines for button to start/stop the st_simbox script. currently inactive
+
+        /*document.getElementById('startScript').addEventListener('click', function() {
+            fetch('/start_script', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    scriptRunning = true;
+                    updateStatusIndicators();
+                });
+        });
+
+        document.getElementById('stopScript').addEventListener('click', function() {
+            fetch('/stop_script', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    scriptRunning = false;
+                    updateStatusIndicators();
+                });
+        });*/
+
+        document.getElementById('toggleAutoRefresh').addEventListener('click', function() {
+            autoRefresh = !autoRefresh;
+            updateStatusIndicators();
+        });
+
+        document.getElementById('updateCallResultButton').addEventListener('click', function() {
+            updateCallResult();
+        });
+
+
+        /*Function to update call result to "ok"*/
+        function updateCallResult() {
+            fetch('/update_call_result', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => console.log(data.status))
+                .catch(error => console.error('Error updating CALL_RESULT:', error));
+        }   
+
+        /*Function to fetch latest modem status*/
+        function fetchData() {
+            if (autoRefresh) {
+                fetch('/latest_json')
+                    .then(response => response.json())
+                    .then(data => updateModemStatus(data));
+            }
+        }
+
+        function updateModemStatus(data) {
+            const modemContainer = document.getElementById('modemContainer');
+            modemContainer.innerHTML = ''; // Clear existing modems
+
+            const senders = data.senders || {};
+            let row;
+
+            Object.entries(senders).forEach(([modemNumber, modemData], index) => {
+                if (index % 4 === 0) {
+                    // Create a new row for every 4 modems
+                    row = document.createElement('div');
+                    row.className = 'modem-row';
+                    modemContainer.appendChild(row);
+                }
+
+                const modemSquare = document.createElement('div');
+                modemSquare.className = 'modem-square';
+
+		const readableTimestamp = convertEpochToReadableTime(modemData.ts);
+                // Create the HTML structure with all JSON fields
+                modemSquare.innerHTML = `
+                    <h3>Modem ${modemNumber}</h3>
+                    <p><strong>Status:</strong> ${modemData.status}</p>
+                    <p><strong>Error:</strong> ${modemData.error}</p>
+                    <p><strong>Error Code:</strong> ${modemData.error_code}</p>
+                    <p><strong>MSISDN:</strong> ${modemData.msisdn}</p>
+                    <p><strong>Sent:</strong> ${modemData.sent}</p>
+                    <p><strong>Modem Index I2C:</strong> ${modemData.modem_index_i2c}</p>
+                    <p><strong>Timestamp:</strong> ${readableTimestamp}</p>
+                    <p><strong>Network:</strong> ${modemData.network}</p>
+                    <p><strong>Use Call:</strong> ${modemData.use_call}</p>
+                    <p><strong>Use SMS:</strong> ${modemData.use_sms}</p>
+                    <p><strong>Loopback MSISDN:</strong> ${modemData.is_loopback_msisdn}</p>
+                    <p><strong>Modem MSISDN:</strong> ${modemData.modem_msisdn}</p>
+                    <p><strong>Survey Results:</strong></p>
+                    <ul>
+                        <li><strong>Model:</strong> ${modemData.survey_results.model}</li>
+                        <li><strong>IMEI:</strong> ${modemData.survey_results.imei}</li>
+                        <li><strong>IMSI:</strong> ${modemData.survey_results.imsi}</li>
+                        <li><strong>Registration Status:</strong> ${modemData.survey_results.registration_status}</li>
+                        <li><strong>Operator:</strong> ${modemData.survey_results.operator}</li>
+                        <li><strong>RAT:</strong> ${modemData.survey_results.rat}</li>
+                        <li><strong>ARFCN:</strong> ${modemData.survey_results.arfcn}</li>
+                        <li><strong>BSIC:</strong> ${modemData.survey_results.bsic}</li>
+                        <li><strong>PSC:</strong> ${modemData.survey_results.psc}</li>
+                        <li><strong>PCI:</strong> ${modemData.survey_results.pci}</li>
+                        <li><strong>MCC:</strong> ${modemData.survey_results.mcc}</li>
+                        <li><strong>MNC:</strong> ${modemData.survey_results.mnc}</li>
+                        <li><strong>LAC:</strong> ${modemData.survey_results.lac}</li>
+                        <li><strong>Cell ID:</strong> ${modemData.survey_results.cell_id}</li>
+                        <li><strong>RSSI:</strong> ${modemData.survey_results.rssi}</li>
+                        <li><strong>SNR:</strong> ${modemData.survey_results.snr}</li>
+                        <li><strong>Call Result:</strong> ${modemData.survey_results.call_result}</li>
+                        <li><strong>SMS Result:</strong> ${modemData.survey_results.sms_result}</li>
+                    </ul>
+                `;
+                
+                row.appendChild(modemSquare);
+            });
+        }
+
+        function updateStatusIndicators() {
+            //document.getElementById('scriptStatusValue').textContent = scriptRunning ? 'Running' : 'Stopped';
+            document.getElementById('refreshStatusValue').textContent = autoRefresh ? 'On' : 'Off';
+        }
+
+	    function convertEpochToReadableTime(epoch) {
+    		const date = new Date(epoch * 1000); // Convert seconds to milliseconds
+    		return date.toLocaleString(); // Format as local date and time
+	    }
+
+        // Function to fetch data from the backend and populate the table
+        function fetchTableData() {
+            fetch('/fetch_table_data') // Fetches data from the Flask endpoint
+                .then(response => response.json())
+                .then(data => {
+                    const tableHeaders = document.getElementById('tableHeaders');
+                    const tbody = document.getElementById('dataTable').querySelector('tbody');
+
+                    // Populate table headers dynamically
+                    tableHeaders.innerHTML = ''; // Clear existing headers
+                    data.columns.forEach(column => {
+                        const th = document.createElement('th');
+                        th.textContent = column.replace(/_/g, ' '); // Replace underscores with spaces for readability
+                        tableHeaders.appendChild(th);
+                    });
+
+                    // Populate table rows dynamically
+                    tbody.innerHTML = ''; // Clear existing rows
+                    data.data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        data.columns.forEach(column => {
+                            const td = document.createElement('td');
+                            td.textContent = row[column] !== null ? row[column] : ''; // Handle null values
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                })
+                .catch(err => console.error('Error fetching table data:', err));
+        }
+        document.addEventListener('DOMContentLoaded', fetchTableData);
+        fetchData(); // Fetch data immediately on load
+        setInterval(fetchData, fetchDataInterval);
+        //updateCallResult();
+        //setInterval(updateCallResult, updateCallResultInterval);
+
+    </script>
+</body>
+</html>
