@@ -12,10 +12,11 @@
     <h1>Modem Status</h1>
     
     <div>
-        <!--<button id="startScript">Start Script</button>
-        <button id="stopScript">Stop Script</button>-->
+        <button id="startScript">Start Script</button>
+        <button id="stopScript">Stop Script</button>
         <button id="toggleAutoRefresh">Toggle Auto-Refresh</button>
-        <button onclick="window.location.href='/edit_config'">Edit Configuration</button>
+        <button id="toggleCollapseAll">Collapse All</button>
+        <!--<button onclick="window.location.href='/edit_config'">Edit Configuration</button>-->
         <button id="updateCallResultButton">Update call results</button>
         <!--<p id="scriptStatus">Script Status: <span id="scriptStatusValue">Stopped</span></p>-->
         <p id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue">On</span></p>
@@ -25,6 +26,8 @@
         <!-- Modem squares will be dynamically inserted here -->
     </div>
 
+
+    <!-- Iframe used for displaying metabase -->
 	<!-- <iframe
     src="http://192.10.10.17:3000/public/dashboard/9bb36986-2784-4290-99a9-afc143f2163c#theme=night"
     frameborder="0"
@@ -51,11 +54,13 @@
         //let scriptRunning = false;
         const fetchDataInterval = 1000; 
         const updateCallResultInterval = 60000; //Interval for updating call result. Currently using the button instead
+        const modemCollapseState = {}; // modemNumber → true/false
+        let collapseAll = false; // false = expanded, true = collapsed
 
 
-        //Lines for button to start/stop the st_simbox script. currently inactive
+        //Lines for button to start/stop the st_simbox script
 
-        /*document.getElementById('startScript').addEventListener('click', function() {
+        document.getElementById('startScript').addEventListener('click', function() {
             fetch('/start_script', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
@@ -73,7 +78,7 @@
                     scriptRunning = false;
                     updateStatusIndicators();
                 });
-        });*/
+        });
 
         document.getElementById('toggleAutoRefresh').addEventListener('click', function() {
             autoRefresh = !autoRefresh;
@@ -83,6 +88,28 @@
         document.getElementById('updateCallResultButton').addEventListener('click', function() {
             updateCallResult();
         });
+
+
+        //Function to collapse/expand modem squares
+        document.getElementById('toggleCollapseAll').addEventListener('click', function() {
+            collapseAll = !collapseAll;
+            const modemSquares = document.querySelectorAll('.modem-square');
+
+            modemSquares.forEach(square => {
+                if (collapseAll) {
+                    square.classList.add('collapsed');
+                    square.querySelector('.arrow').classList.remove('rotated');
+                    modemCollapseState[square.querySelector('h3').textContent.match(/\d+/)[0]] = true;
+                } else {
+                    square.classList.remove('collapsed');
+                    square.querySelector('.arrow').classList.add('rotated');
+                    modemCollapseState[square.querySelector('h3').textContent.match(/\d+/)[0]] = false;
+                }
+            });
+
+            this.textContent = collapseAll ? 'Expand All' : 'Collapse All';
+        });
+
 
 
         /*Function to update call result to "ok"*/
@@ -122,8 +149,14 @@
 
 		const readableTimestamp = convertEpochToReadableTime(modemData.ts);
                 // Create the HTML structure with all JSON fields
+
+                const isCollapsed = modemCollapseState[modemNumber] === true;
+
                 modemSquare.innerHTML = `
-                    <h3>Modem ${modemNumber}</h3>
+                    <h3 class="collapsible-header">
+                        <span class="arrow ${isCollapsed ? '' : 'rotated'}">&#9654;</span> Modem ${modemNumber}
+                    </h3>
+                    <div class="modem-details ${isCollapsed ? 'collapsed' : ''}">
                     <p><strong>Status:</strong> ${modemData.status}</p>
                     <p><strong>Error:</strong> ${modemData.error}</p>
                     <p><strong>Error Code:</strong> ${modemData.error_code}</p>
@@ -157,7 +190,22 @@
                         <li><strong>Call Result:</strong> ${modemData.survey_results.call_result}</li>
                         <li><strong>SMS Result:</strong> ${modemData.survey_results.sms_result}</li>
                     </ul>
+                    </div>
                 `;
+                //Listener for collapsing modem squares
+
+                
+                modemSquare.querySelector('.collapsible-header').addEventListener('click', function() {
+                    const details = this.nextElementSibling;
+                    const arrow = this.querySelector('.arrow');
+                    details.classList.toggle('collapsed');
+                    //modemSquare.classList.toggle('collapsed'); 
+                    arrow.classList.toggle('rotated');
+
+                    // Save state if modem is collapsed or not, since page is constantly refreshing
+                    modemCollapseState[modemNumber] = details.classList.contains('collapsed');
+                });
+                
                 
                 row.appendChild(modemSquare);
             });
@@ -208,6 +256,9 @@
         setInterval(fetchData, fetchDataInterval);
         //updateCallResult();
         //setInterval(updateCallResult, updateCallResultInterval);
+
+        
+
 
     </script>
 </body>

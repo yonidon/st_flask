@@ -105,3 +105,43 @@ table tbody tr:hover {
 table tbody td {
     padding: 10px;
 }
+
+@media (max-width: 768px) {
+    .modem-row {
+        flex-wrap: wrap;
+    }
+
+    .modem-square {
+        width: 100% !important; /* One modem per row on small screens */
+        margin: 10px 0; /* Add vertical spacing */
+    }
+}
+
+.modem-details.collapsed {
+    display: none;
+}
+.modem-square.collapsed {
+    padding-bottom: 0;
+    padding-top: 0;
+    margin-bottom: 5px; /* Optional: less space */
+}
+
+
+.modem-details {
+    transition: all 0.3s ease;
+}
+
+.collapsible-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapsible-header .arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+    margin-right: 8px;
+}
+
+.collapsible-header .arrow.rotated {
+    transform: rotate(90deg);
+}

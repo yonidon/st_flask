@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Database configuration for remote connection
 DATABASE_CONFIG = {
-    'host': '192.192.193.125',  # Replace with remote IP or hostname
+    'host': '192.192.193.163',  # Replace with remote IP or hostname
     'port': 3306,              # Default MariaDB/MySQL port, adjust if needed
     'user': 'sgb',
     'password': 'sgb',
