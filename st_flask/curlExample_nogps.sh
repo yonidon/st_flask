@@ -37,8 +37,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "failed_no_carrier",
-                "sms_result": "",
-                "gps_location":"32.098368,34.847567,44.8"
+                "sms_result": ""
             }
         },
         "2": {
@@ -72,8 +71,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "",
-                "sms_result": "",
-                "gps_location":"32.098432,34.847642,45.2"
+                "sms_result": ""
             }
         },
         "3": {
@@ -107,8 +105,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "",
-                "sms_result": "",
-                "gps_location":"32.098495,34.847717,45.1"
+                "sms_result": ""
             }
         },
         "4": {
@@ -142,8 +139,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "",
-                "sms_result": "",
-                "gps_location":"32.098559,34.847792,45.5"
+                "sms_result": ""
             }
         },
         "5": {
@@ -177,8 +173,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-67",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.098622,34.847867,45.3"
+                "sms_result": ""
             }
         },
         "6": {
@@ -212,8 +207,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-70",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.098686,34.847942,45.1"
+                "sms_result": ""
             }
         },
         "7": {
@@ -247,8 +241,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-68",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.098750,34.848017,44.8"
+                "sms_result": ""
             }
         },
         "8": {
@@ -282,8 +275,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-68",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.098813,34.848092,44.9"
+                "sms_result": ""
             }
         },
         "9": {
@@ -317,9 +309,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.098877,34.848167,44.9"
-
+                "sms_result": ""
             }
         },
         "10": {
@@ -353,8 +343,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "failed_atd",
-                "sms_result": "",
-                "gps_location":"32.098941,34.848242,44.9"
+                "sms_result": ""
             }
         },
         "11": {
@@ -388,8 +377,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-55",
                 "snr": "-7",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099004,34.848317,44.8"
+                "sms_result": ""
             }
         },
         "12": {
@@ -423,8 +411,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-72",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099068,34.848392,44.3"
+                "sms_result": ""
             }
         },
         "13": {
@@ -458,8 +445,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099131,34.848467,44.2"
+                "sms_result": ""
             }
         },
         "14": {
@@ -493,8 +479,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "",
                 "snr": "",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099195,34.848542,44.1"
+                "sms_result": ""
             }
         },
         "15": {
@@ -528,8 +513,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-59",
                 "snr": "-20",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099259,34.848617,44.4"
+                "sms_result": ""
             }
         },
         "16": {
@@ -563,8 +547,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "rssi": "-69",
                 "snr": "0",
                 "call_result": "failed_timeout",
-                "sms_result": "",
-                "gps_location":"32.099322,34.848692,44.9"
+                "sms_result": ""
             }
         }
     }

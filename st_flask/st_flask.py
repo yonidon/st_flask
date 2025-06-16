@@ -24,6 +24,48 @@ def convert_epoch_to_datetime(epoch_time):
     """Convert epoch time to MySQL-compatible DATETIME string."""
     return datetime.fromtimestamp(epoch_time).strftime('%Y-%m-%d %H:%M:%S')
 
+def parse_gps_location(gps_location_string):
+    """
+    Parses a GPS location string in the format '"gps_location":"lat,lon,alt"'
+    and returns latitude, longitude, and altitude as floats.
+
+    Args:
+        gps_location_string (str): The string containing the GPS location.
+
+    Returns:
+        tuple: (latitude, longitude, altitude) as floats, or (None, None, None) if parsing fails.
+    """
+    latitude, longitude, altitude = None, None, None
+    try:
+        # First, remove the '"gps_location":' prefix and any surrounding quotes.
+        # This handles cases like '"gps_location":"32.099322,34.848692,44.9"'
+        # or just '"32.099322,34.848692,44.9"'
+        start_index = gps_location_string.find(':')
+        if start_index != -1:
+            # Extract the part after the colon and strip surrounding quotes
+            coordinates_part = gps_location_string[start_index + 1:].strip().strip('"')
+        else:
+            # If no "gps_location":" prefix is found, assume the string is just the coordinates
+            coordinates_part = gps_location_string.strip('"')
+
+        # Split the string by comma
+        parts = coordinates_part.split(',')
+
+        # Ensure we have at least 3 parts (latitude, longitude, altitude)
+        if len(parts) >= 3:
+            latitude = float(parts[0])
+            longitude = float(parts[1])
+            altitude = float(parts[2])
+        else:
+            print(f"Warning: Insufficient parts in GPS string '{coordinates_part}'. Expected 3, got {len(parts)}.")
+
+    except (ValueError, IndexError) as e:
+        print(f"Error parsing GPS location string '{gps_location_string}': {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+    return latitude, longitude, altitude
+
 def init_db():
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
@@ -61,7 +103,10 @@ def init_db():
             SNR VARCHAR(255),
             CALL_RESULT VARCHAR(255),
             SMS_RESULT VARCHAR(255),
-            INDEX idx_timestamp (TIMESTAMP)
+            INDEX idx_timestamp (TIMESTAMP),
+            LATITUDE DECIMAL(13,5),
+            LONGITUDE DECIMAL(11,5),
+            ALTITUDE  DECIMAL(6,1)                         
         )
     ''')
     conn.commit()
@@ -75,13 +120,17 @@ def insert_modem_data(modem_number, modem_data):
     # Convert epoch timestamp to MySQL-compatible format
     readable_timestamp = convert_epoch_to_datetime(modem_data['ts'])
 
+    #Parse gps coordinates from json
+    gps_string_from_modem = modem_data['survey_results']['gps_location'] # Use .get() for safer access
+    latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
+
     cursor.execute('''
         INSERT INTO TBL_ST_SIMBOX_EVENTS (
             MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, MSISDN, SENT, MODEM_INDEX_I2C,
             TIMESTAMP, NETWORK, USE_CALL, USE_SMS, IS_LOOPBACK_MSISDN, MODEM_MSISDN, MODEL, IMEI,
             IMSI, REGISTRATION_STATUS, OPERATOR, RAT, ARFCN, BSIC, PSC, PCI, MCC,
-            MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, SMS_RESULT
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, SMS_RESULT, LATITUDE, LONGITUDE, ALTITUDE
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         modem_number, modem_data['status'], modem_data['error'], modem_data['error_code'],
         modem_data['msisdn'], modem_data['sent'], modem_data['modem_index_i2c'], readable_timestamp,
@@ -94,7 +143,10 @@ def insert_modem_data(modem_number, modem_data):
         modem_data['survey_results']['mcc'], modem_data['survey_results']['mnc'],
         modem_data['survey_results']['lac'], modem_data['survey_results']['cell_id'],
         modem_data['survey_results']['rssi'], modem_data['survey_results']['snr'],
-        modem_data['survey_results']['call_result'], modem_data['survey_results']['sms_result']
+        modem_data['survey_results']['call_result'], modem_data['survey_results']['sms_result'],
+        latitude, # Passed directly
+        longitude, # Passed directly
+        altitude # Passed directly
     ))
     
 
@@ -242,6 +294,27 @@ def edit_config():
 def trigger_update_call_result():
     update_call_result()
     return jsonify({"status": "CALL_RESULT updated"})
+
+
+@app.route('/modem_locations')
+def modem_locations():
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT LATITUDE, LONGITUDE, MCC, MNC, LAC, CELL_ID, CALL_RESULT 
+            FROM TBL_ST_SIMBOX_EVENTS 
+            WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
+            ORDER BY ID DESC LIMIT 100
+        ''')
+        rows = cursor.fetchall()
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 if __name__ == '__main__':

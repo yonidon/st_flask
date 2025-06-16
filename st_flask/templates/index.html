@@ -7,24 +7,39 @@
 
     <!-- Link to external CSS file -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.css') }}">
+    <script src="{{ url_for('static', filename='leaflet.js') }}"></script>
+
+
 </head>
 <body>
     <h1>Modem Status</h1>
-    
-    <div>
-        <button id="startScript">Start Script</button>
-        <button id="stopScript">Stop Script</button>
-        <button id="toggleAutoRefresh">Toggle Auto-Refresh</button>
-        <button id="toggleCollapseAll">Collapse All</button>
-        <!--<button onclick="window.location.href='/edit_config'">Edit Configuration</button>-->
-        <button id="updateCallResultButton">Update call results</button>
-        <!--<p id="scriptStatus">Script Status: <span id="scriptStatusValue">Stopped</span></p>-->
-        <p id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue">On</span></p>
+    <div class="tab-buttons">
+    <button class="tab-button active" data-tab="modems-tab">Modems</button>
+    <button class="tab-button" data-tab="table-tab">Database</button>
+    <button class="tab-button" data-tab="map-tab">Map</button>
     </div>
-    
-    <div class="modem-container" id="modemContainer">
-        <!-- Modem squares will be dynamically inserted here -->
-    </div>
+
+    <div id="modems-tab" class="tab-panel active">
+    <!-- start of modem square tab-->
+
+        <div>
+            <button id="startScript">Start Script</button>
+            <button id="stopScript">Stop Script</button>
+            <button id="toggleAutoRefresh">Toggle Auto-Refresh</button>
+            <button id="toggleCollapseAll">Collapse All</button>
+            <!--<button onclick="window.location.href='/edit_config'">Edit Configuration</button>-->
+            <button id="updateCallResultButton">Update call results</button>
+            <!--<p id="scriptStatus">Script Status: <span id="scriptStatusValue">Stopped</span></p>-->
+            <p id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue">On</span></p>
+        </div>
+        
+        <div class="modem-container" id="modemContainer">
+            <!-- Modem squares will be dynamically inserted here -->
+        </div>
+
+    </div><!-- end of modem square tab-->
 
 
     <!-- Iframe used for displaying metabase -->
@@ -35,19 +50,30 @@
     height="700"
     ></iframe>
     -->
-    <!-- Dynamic Table That shows sql data -->
-    <div class="table-container">
-        <table id="dataTable">
-            <thead>
-                <tr id="tableHeaders">
-                    <!-- Headers will be dynamically populated here -->
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Data will be dynamically populated here -->
-            </tbody>
-        </table>
-    </div>   
+
+    <div id="table-tab" class="tab-panel">
+    <!-- table-tab starts here -->
+
+        <!-- Dynamic Table That shows sql data -->
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr id="tableHeaders">
+                        <!-- Headers will be dynamically populated here -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be dynamically populated here -->
+                </tbody>
+            </table>
+        </div>   
+
+    </div><!-- table-tab ends here -->
+
+    <div id="map-tab" class="tab-panel">  
+        <h2>Modem Map</h2>
+        <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
+    </div>
 
     <script>
         let autoRefresh = true;
@@ -109,8 +135,6 @@
 
             this.textContent = collapseAll ? 'Expand All' : 'Collapse All';
         });
-
-
 
         /*Function to update call result to "ok"*/
         function updateCallResult() {
@@ -189,6 +213,7 @@
                         <li><strong>SNR:</strong> ${modemData.survey_results.snr}</li>
                         <li><strong>Call Result:</strong> ${modemData.survey_results.call_result}</li>
                         <li><strong>SMS Result:</strong> ${modemData.survey_results.sms_result}</li>
+                        <li><strong>GPS coordinates:</strong> ${modemData.survey_results.gps_location}</li>
                     </ul>
                     </div>
                 `;
@@ -221,6 +246,8 @@
     		return date.toLocaleString(); // Format as local date and time
 	    }
 
+        
+
         // Function to fetch data from the backend and populate the table
         function fetchTableData() {
             fetch('/fetch_table_data') // Fetches data from the Flask endpoint
@@ -251,9 +278,104 @@
                 })
                 .catch(err => console.error('Error fetching table data:', err));
         }
-        document.addEventListener('DOMContentLoaded', fetchTableData);
-        fetchData(); // Fetch data immediately on load
-        setInterval(fetchData, fetchDataInterval);
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tab switching logic
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+
+            // Restore last tab from localStorage, or default to 'modems-tab'
+            const lastTabId = localStorage.getItem('activeTab') || 'modems-tab';
+
+            // Activate the stored/default tab
+            function activateTab(tabId) {
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabId);
+                });
+
+                tabPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.id === tabId);
+                });
+            }
+
+            // Set initial tab
+            activateTab(lastTabId);
+
+            // Set click handlers
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    activateTab(tabId);
+                    localStorage.setItem('activeTab', tabId); // Save to storage
+                });
+            });
+            /*
+            // Default center and zoom for map (adjust as needed)
+            const defaultCenter = [32.09778, 34.84765]; // Tel Aviv
+            const defaultZoom = 18;
+            let map = L.map('map').setView(defaultCenter, defaultZoom);
+
+            L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
+                maxZoom: 25,
+                minZoom: 0,
+                errorTileUrl: '/static/fallback.png', // optional
+                attribution: '&copy; OpenStreetMap contributors',
+
+                noWrap: true,              // Prevents repeat tiles outside bounds
+                bounds: L.latLngBounds(
+                    [31.5, 34.2],  // Southwest corner
+                    [32.6, 35.3]   // Northeast corner — change based on your tile area
+                ),
+                tms: false,
+                keepBuffer: 10  
+            }).addTo(map);
+               
+
+            */
+
+            var map = L.map('map', { attributionControl: false }).setView([32.0982, 34.8479],11);
+
+            L.control.attribution({ prefix: false }).addTo(map);
+
+            var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
+                minZoom: 0,
+                maxZoom: 22,
+                tms: false,
+                attribution: 'Created by QGIS'
+            }).addTo(map);
+
+            // Load markers
+            fetch('/modem_locations')
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(item => {
+                        if (!item.LATITUDE || !item.LONGITUDE) return;
+
+                        const markerColor = (item.CALL_RESULT === 'OK') ? 'blue' : 'red';
+
+                        const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
+                            color: markerColor,
+                            radius: 8,
+                            fillOpacity: 0.6
+                        }).addTo(map);
+
+                        marker.bindTooltip(`
+                            <strong>MCC:</strong> ${item.MCC}<br>
+                            <strong>MNC:</strong> ${item.MNC}<br>
+                            <strong>LAC:</strong> ${item.LAC}<br>
+                            <strong>Cell ID:</strong> ${item.CELL_ID}
+                        `, { direction: 'top', offset: [0, -5] });
+                    });
+                })
+                .catch(err => console.error('Map fetch error:', err));
+
+
+            // Call fetchTableData immediately on load
+            fetchTableData();
+
+            // Start fetchData interval
+            fetchData(); // Call once immediately
+            setInterval(fetchData, fetchDataInterval); // Call repeatedly every second
+        });    
         //updateCallResult();
         //setInterval(updateCallResult, updateCallResultInterval);
 
