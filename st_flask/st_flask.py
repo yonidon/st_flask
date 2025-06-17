@@ -1,23 +1,39 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, redirect, url_for, make_response
 import subprocess
-import configparser
 import mysql.connector
 from datetime import datetime
 import time
+import os
+import configparser
+import csv
+import io
 
 
 app = Flask(__name__)
 
 # Database configuration for remote connection
-DATABASE_CONFIG = {
-    'host': '192.192.193.163',  # Replace with remote IP or hostname
-    'port': 3306,              # Default MariaDB/MySQL port, adjust if needed
-    'user': 'sgb',
-    'password': 'sgb',
-    'database': 'sgb'
-}
+#======================================================
+DB_CONFIG_FILE = '/home/guard3/st_flask/st_flask/db_config.ini'
 
-CONFIG_FILE = '/home/guard3/st_simbox/st_simbox.ini'
+def load_db_config():
+    config = configparser.ConfigParser()
+    if not os.path.exists(DB_CONFIG_FILE):
+        config['database'] = {
+            'host': 'localhost',
+            'port': '3306',
+            'user': 'root',
+            'password': '',
+            'database': 'sgb'
+        }
+        with open(DB_CONFIG_FILE, 'w') as f:
+            config.write(f)
+    else:
+        config.read(DB_CONFIG_FILE)
+    return config['database']
+
+DATABASE_CONFIG = load_db_config()
+#======================================================
+
 latest_json_data = {}  # Global variable to store the latest JSON data
 
 def convert_epoch_to_datetime(epoch_time):
@@ -66,53 +82,63 @@ def parse_gps_location(gps_location_string):
 
     return latitude, longitude, altitude
 
+#Create table if not exists
 def init_db():
-    conn = mysql.connector.connect(**DATABASE_CONFIG)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_EVENTS (
-            ID INT AUTO_INCREMENT PRIMARY KEY,
-            MODEM_NUMBER INT,
-            STATUS VARCHAR(255),
-            ERROR VARCHAR(255),
-            ERROR_CODE INT,
-            MSISDN VARCHAR(255),
-            SENT INT,
-            MODEM_INDEX_I2C INT,
-            TIMESTAMP DATETIME,
-            NETWORK VARCHAR(255),
-            USE_CALL INT,
-            USE_SMS INT,
-            IS_LOOPBACK_MSISDN INT,
-            MODEM_MSISDN VARCHAR(255),
-            MODEL VARCHAR(255),
-            IMEI VARCHAR(255),
-            IMSI VARCHAR(255),
-            REGISTRATION_STATUS VARCHAR(255),
-            OPERATOR VARCHAR(255),
-            RAT VARCHAR(255),
-            ARFCN VARCHAR(255),
-            BSIC VARCHAR(255),
-            PSC VARCHAR(255),
-            PCI VARCHAR(255),
-            MCC VARCHAR(255),
-            MNC VARCHAR(255),
-            LAC VARCHAR(255),
-            CELL_ID VARCHAR(255),
-            RSSI VARCHAR(255),
-            SNR VARCHAR(255),
-            CALL_RESULT VARCHAR(255),
-            SMS_RESULT VARCHAR(255),
-            INDEX idx_timestamp (TIMESTAMP),
-            LATITUDE DECIMAL(13,5),
-            LONGITUDE DECIMAL(11,5),
-            ALTITUDE  DECIMAL(6,1)                         
-        )
-    ''')
-    conn.commit()
-    cursor.close()
-    conn.close()
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_EVENTS (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                MODEM_NUMBER INT,
+                STATUS VARCHAR(255),
+                ERROR VARCHAR(255),
+                ERROR_CODE INT,
+                MSISDN VARCHAR(255),
+                SENT INT,
+                MODEM_INDEX_I2C INT,
+                TIMESTAMP DATETIME,
+                NETWORK VARCHAR(255),
+                USE_CALL INT,
+                USE_SMS INT,
+                IS_LOOPBACK_MSISDN INT,
+                MODEM_MSISDN VARCHAR(255),
+                MODEL VARCHAR(255),
+                IMEI VARCHAR(255),
+                IMSI VARCHAR(255),
+                REGISTRATION_STATUS VARCHAR(255),
+                OPERATOR VARCHAR(255),
+                RAT VARCHAR(255),
+                ARFCN VARCHAR(255),
+                BSIC VARCHAR(255),
+                PSC VARCHAR(255),
+                PCI VARCHAR(255),
+                MCC VARCHAR(255),
+                MNC VARCHAR(255),
+                LAC VARCHAR(255),
+                CELL_ID VARCHAR(255),
+                RSSI VARCHAR(255),
+                SNR VARCHAR(255),
+                CALL_RESULT VARCHAR(255),
+                SMS_RESULT VARCHAR(255),
+                INDEX idx_timestamp (TIMESTAMP),
+                LATITUDE DECIMAL(13,5),
+                LONGITUDE DECIMAL(11,5),
+                ALTITUDE  DECIMAL(6,1)   
+            )
+        ''')
+        conn.commit()
+        print("TBL_ST_SIMBOX_EVENTS initialized successfully.")
+    except mysql.connector.Error as err:
+        print(f"Error initializing database: {err}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
 
+#When json from simbox comes, insert to DB
 def insert_modem_data(modem_number, modem_data):
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
@@ -159,6 +185,8 @@ def insert_modem_data(modem_number, modem_data):
     cursor.close()
     conn.close()
 
+
+#Update call results in DB from TBL_ST_SIMBOX_CALLS. This table is usually updated by the phone receiving the calls from simbox
 def update_call_result():
     try:
         conn = mysql.connector.connect(**DATABASE_CONFIG)
@@ -200,7 +228,7 @@ def update_call_result():
         cursor.close()
         conn.close()
 
-
+#Receive json from backend and insert it to mysql table 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
     global latest_json_data
@@ -213,30 +241,13 @@ def receive_json():
 
     return jsonify({"status": "success"}), 200
 
-#I don't know what this method is for
-@app.route('/fetch_data', methods=['GET'])
-def fetch_data():
-    try:
-        # Connect to the MariaDB database
-        conn = mysql.connector.connect(**DATABASE_CONFIG)
-        cursor = conn.cursor(dictionary=True)  # Use dictionary=True for key-value row format
-        cursor.execute('SELECT * FROM ST_SIMBOX_EVENTS')  # Execute the query
-        rows = cursor.fetchall()  # Fetch all rows
-    except mysql.connector.Error as err:
-        return jsonify({"error": f"Database error: {err}"}), 500
-    finally:
-        # Close cursor and connection
-        cursor.close()
-        conn.close()
-
-    return jsonify(rows)  # Return rows as JSON response
-
+#Fetch data for table tab
 @app.route('/fetch_table_data', methods=['GET'])
 def fetch_table_data():
     try:
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT ID,MODEM_NUMBER,STATUS,ERROR,MSISDN,TIMESTAMP,IMEI,IMSI,OPERATOR,ARFCN,CALL_RESULT,MODEM_MSISDN FROM TBL_ST_SIMBOX_EVENTS ORDER BY ID DESC LIMIT 16')
+        cursor.execute('SELECT * FROM TBL_ST_SIMBOX_EVENTS')
         rows = cursor.fetchall()
         # Get column names dynamically
         column_names = cursor.column_names
@@ -253,6 +264,7 @@ def fetch_table_data():
 def latest_json():
     return jsonify(latest_json_data)
 
+#Starts backend script, need to change this to a new script alex will make
 @app.route('/start_script', methods=['POST'])
 def start_script():
     with open('/home/guard3/st_simbox/script_output.log', 'w') as f:
@@ -268,34 +280,12 @@ def stop_script():
 def index():
     return render_template('index.html')
 
-@app.route('/edit_config', methods=['GET', 'POST'])
-def edit_config():
-    config = configparser.ConfigParser()
-    config.read(CONFIG_FILE)
-    
-    if request.method == 'POST':
-        # Update config with the form data
-        for section in config.sections():
-            for key in config[section]:
-                form_value = request.form.get(f"{section}_{key}")
-                if form_value is not None:
-                    config[section][key] = form_value
-        
-        # Save the updated config back to the file
-        with open(CONFIG_FILE, 'w') as configfile:
-            config.write(configfile)
-        
-        return redirect(url_for('edit_config'))
-
-    # Render the edit form with the current config values
-    return render_template('edit_config.html', config=config)
-
 @app.route('/update_call_result', methods=['POST'])
 def trigger_update_call_result():
     update_call_result()
     return jsonify({"status": "CALL_RESULT updated"})
 
-
+#Load locations from database to be used on map. This is probably redundant.
 @app.route('/modem_locations')
 def modem_locations():
     try:
@@ -305,7 +295,7 @@ def modem_locations():
             SELECT LATITUDE, LONGITUDE, MCC, MNC, LAC, CELL_ID, CALL_RESULT 
             FROM TBL_ST_SIMBOX_EVENTS 
             WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
-            ORDER BY ID DESC LIMIT 100
+            ORDER BY ID DESC
         ''')
         rows = cursor.fetchall()
         return jsonify(rows)
@@ -314,6 +304,40 @@ def modem_locations():
     finally:
         cursor.close()
         conn.close()
+
+#Endpoint to export database to csv
+@app.route('/export_csv')
+def export_csv():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM TBL_ST_SIMBOX_EVENTS')
+    rows = cursor.fetchall()
+    headers = [i[0] for i in cursor.description]
+
+    csv_io = io.StringIO()
+    writer = csv.writer(csv_io)
+    writer.writerow(headers)
+    writer.writerows(rows)
+
+    cursor.close()
+    conn.close()
+
+    response = make_response(csv_io.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=simbox_events.csv"
+    response.headers["Content-type"] = "text/csv"
+    return response
+
+#Endpoint to clear table
+@app.route('/clear_table', methods=['POST'])
+def clear_table():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_EVENTS')
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'cleared'})
+
 
 
 

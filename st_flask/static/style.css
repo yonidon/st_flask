@@ -11,6 +11,16 @@ h1 {
     color: #ffffff;
 }
 
+h2 {
+    text-align: center;
+    color: #ffffff;
+}
+
+h6 {
+    text-align: center;
+    color: #ffffff;
+}
+
 button {
     background-color: #145ea8;
     color: white;
@@ -73,6 +83,7 @@ button:disabled {
     border-radius: 8px;
     background-color: #1e1e2f; /* Dark blue background */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    overflow-x: auto;
 }
 table {
     width: 100%;
@@ -185,6 +196,7 @@ table tbody td {
     display: block;
 }
 
+
 #map {
     width: 100%;
     height: 500px;
@@ -192,5 +204,85 @@ table tbody td {
     border: 2px solid #1e3c72;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+
+/*Segment for table tab*/
+.dataTables_wrapper {
+  font-size: 0.9em;
+  padding: 10px;
+}
+
+.dataTables_paginate {
+  margin-top: 10px;
+}
+
+/*Segment for buttons in modems tab*/
+.button-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.button-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.button-bar button {
+    background-color: #004080;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.button-bar button:hover {
+    background-color: #0059b3;
+}
+
+.status-bar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-top: 10px;
+}
+
+.badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.85em;
+    color: white;
+    margin-left: 5px;
+}
+
+.badge.on {
+    background-color: #28a745;
+}
+
+.badge.off {
+    background-color: #6c757d;
+}
+
+.badge.running {
+    background-color: #007bff;
+}
+
+.badge.stopped {
+    background-color: #dc3545;
 }
 

@@ -36,9 +36,9 @@ curl -X POST http://localhost:8999/receive_json \
                 "cell_id": "",
                 "rssi": "",
                 "snr": "",
-                "call_result": "failed_no_carrier",
+                "call_result": "OK",
                 "sms_result": "",
-                "gps_location":"32.098368,34.847567,44.8"
+                "gps_location":"32.0424366,34.8474245,44.8"
             }
         },
         "2": {
@@ -73,7 +73,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "snr": "",
                 "call_result": "",
                 "sms_result": "",
-                "gps_location":"32.098432,34.847642,45.2"
+                "gps_location":"32.3522435,34.822235,45.2"
             }
         },
         "3": {
@@ -108,7 +108,7 @@ curl -X POST http://localhost:8999/receive_json \
                 "snr": "",
                 "call_result": "",
                 "sms_result": "",
-                "gps_location":"32.098495,34.847717,45.1"
+                "gps_location":"32.094495,34.842424717,45.1"
             }
         },
         "4": {

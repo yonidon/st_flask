@@ -8,8 +8,18 @@
     <!-- Link to external CSS file -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 
+    <!-- Leaflet for map -->
     <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.css') }}">
     <script src="{{ url_for('static', filename='leaflet.js') }}"></script>
+
+    <!-- jQuery and DataTables JS for table tab-->
+    <script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='jquery.dataTables.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='jquery.dataTables.min.css') }}">
+
+    <!-- Style for buttons-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 
 
 </head>
@@ -24,15 +34,22 @@
     <div id="modems-tab" class="tab-panel active">
     <!-- start of modem square tab-->
 
-        <div>
-            <button id="startScript">Start Script</button>
-            <button id="stopScript">Stop Script</button>
-            <button id="toggleAutoRefresh">Toggle Auto-Refresh</button>
-            <button id="toggleCollapseAll">Collapse All</button>
-            <!--<button onclick="window.location.href='/edit_config'">Edit Configuration</button>-->
-            <button id="updateCallResultButton">Update call results</button>
-            <!--<p id="scriptStatus">Script Status: <span id="scriptStatusValue">Stopped</span></p>-->
-            <p id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue">On</span></p>
+        <div class="button-group">
+            <div class="button-bar">
+                <button id="startScript"><i class="fas fa-play"></i> Start</button>
+                <button id="stopScript"><i class="fas fa-stop"></i> Stop</button>
+            </div>
+            <div class="button-bar">
+                <button id="toggleAutoRefresh"><i class="fas fa-sync-alt"></i> Auto-Refresh</button>
+                <button id="toggleCollapseAll">
+                <i class="fas fa-compress"></i> <span>Collapse All</span></button>
+                <button id="updateCallResultButton"><i class="fas fa-check-circle"></i> Update Call Results</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="scriptStatus">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
+            <span id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue" class="badge on">On</span></span>
         </div>
         
         <div class="modem-container" id="modemContainer">
@@ -41,20 +58,15 @@
 
     </div><!-- end of modem square tab-->
 
-
-    <!-- Iframe used for displaying metabase -->
-	<!-- <iframe
-    src="http://192.10.10.17:3000/public/dashboard/9bb36986-2784-4290-99a9-afc143f2163c#theme=night"
-    frameborder="0"
-    width="100%"
-    height="700"
-    ></iframe>
-    -->
-
     <div id="table-tab" class="tab-panel">
     <!-- table-tab starts here -->
 
         <!-- Dynamic Table That shows sql data -->
+         <div class="button-group">
+            <button onclick="confirmClear()">Clear Table</button>
+            <button onclick="window.location.href='/export_csv'">Export to CSV</button>
+         </div>
+        
         <div class="table-container">
             <table id="dataTable">
                 <thead>
@@ -72,6 +84,7 @@
 
     <div id="map-tab" class="tab-panel">  
         <h2>Modem Map</h2>
+        <h6>Double click to set default location</h6>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
 
@@ -116,25 +129,27 @@
         });
 
 
-        //Function to collapse/expand modem squares
-        document.getElementById('toggleCollapseAll').addEventListener('click', function() {
-            collapseAll = !collapseAll;
-            const modemSquares = document.querySelectorAll('.modem-square');
+        document.getElementById('toggleCollapseAll').addEventListener('click', function () {
+            const toggleBtn = this;
+            const labelSpan = toggleBtn.querySelector('span');
 
-            modemSquares.forEach(square => {
-                if (collapseAll) {
-                    square.classList.add('collapsed');
-                    square.querySelector('.arrow').classList.remove('rotated');
-                    modemCollapseState[square.querySelector('h3').textContent.match(/\d+/)[0]] = true;
-                } else {
-                    square.classList.remove('collapsed');
-                    square.querySelector('.arrow').classList.add('rotated');
-                    modemCollapseState[square.querySelector('h3').textContent.match(/\d+/)[0]] = false;
-                }
+            // Invert the global collapse mode
+            const collapseAll = labelSpan.textContent.includes("Collapse");
+
+            // Apply to all modems
+            document.querySelectorAll('.modem-square').forEach(square => {
+                const modemNumber = square.getAttribute('data-modem-number');
+                modemCollapseState[modemNumber] = collapseAll;
+                square.classList.toggle('collapsed', collapseAll);
             });
 
-            this.textContent = collapseAll ? 'Expand All' : 'Collapse All';
+            // Update button label/icon
+            labelSpan.textContent = collapseAll ? "Expand All" : "Collapse All";
+            toggleBtn.querySelector('i').className = collapseAll ? "fas fa-expand" : "fas fa-compress";
         });
+
+
+
 
         /*Function to update call result to "ok"*/
         function updateCallResult() {
@@ -150,6 +165,18 @@
                 fetch('/latest_json')
                     .then(response => response.json())
                     .then(data => updateModemStatus(data));
+            }
+        }
+
+
+        function confirmClear() {
+            if (confirm("Are you sure you want to delete ALL rows in TBL_ST_SIMBOX_EVENTS?")) {
+                fetch('/clear_table', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        alert("Table cleared.");
+                        fetchTableData(); // refresh view
+                    });
             }
         }
 
@@ -170,11 +197,14 @@
 
                 const modemSquare = document.createElement('div');
                 modemSquare.className = 'modem-square';
+                modemSquare.setAttribute('data-modem-number', modemNumber);
+
 
 		const readableTimestamp = convertEpochToReadableTime(modemData.ts);
                 // Create the HTML structure with all JSON fields
 
                 const isCollapsed = modemCollapseState[modemNumber] === true;
+
 
                 modemSquare.innerHTML = `
                     <h3 class="collapsible-header">
@@ -275,9 +305,18 @@
                         });
                         tbody.appendChild(tr);
                     });
+                    // After populating headers and rows:
+                    $('#dataTable').DataTable({
+                        pageLength: 50,
+                        order: [[0, 'desc']],  // Default sort by first column, descending
+                        scrollX: true
+                    });
+
                 })
                 .catch(err => console.error('Error fetching table data:', err));
         }
+
+        //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
             // Tab switching logic
             const tabButtons = document.querySelectorAll('.tab-button');
@@ -308,31 +347,11 @@
                     localStorage.setItem('activeTab', tabId); // Save to storage
                 });
             });
-            /*
-            // Default center and zoom for map (adjust as needed)
-            const defaultCenter = [32.09778, 34.84765]; // Tel Aviv
-            const defaultZoom = 18;
-            let map = L.map('map').setView(defaultCenter, defaultZoom);
 
-            L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
-                maxZoom: 25,
-                minZoom: 0,
-                errorTileUrl: '/static/fallback.png', // optional
-                attribution: '&copy; OpenStreetMap contributors',
-
-                noWrap: true,              // Prevents repeat tiles outside bounds
-                bounds: L.latLngBounds(
-                    [31.5, 34.2],  // Southwest corner
-                    [32.6, 35.3]   // Northeast corner — change based on your tile area
-                ),
-                tms: false,
-                keepBuffer: 10  
-            }).addTo(map);
-               
-
-            */
-
-            var map = L.map('map', { attributionControl: false }).setView([32.0982, 34.8479],11);
+            //Default map center and coordinate
+            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
+            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
+            const map = L.map('map', { attributionControl: false }).setView(savedCenter, savedZoom);
 
             L.control.attribution({ prefix: false }).addTo(map);
 
@@ -350,7 +369,7 @@
                     data.forEach(item => {
                         if (!item.LATITUDE || !item.LONGITUDE) return;
 
-                        const markerColor = (item.CALL_RESULT === 'OK') ? 'blue' : 'red';
+                        const markerColor = (item.CALL_RESULT === 'OK') ? 'green' : 'red';
 
                         const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
                             color: markerColor,
@@ -368,7 +387,18 @@
                 })
                 .catch(err => console.error('Map fetch error:', err));
 
+            map.on('dblclick', function (e) {
+                const lat = e.latlng.lat.toFixed(5);
+                const lng = e.latlng.lng.toFixed(5);
+                const zoom = map.getZoom();
 
+                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
+                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
+                    localStorage.setItem('defaultMapZoom', zoom);
+                    alert("Default map view saved!");
+                }
+            });
+    
             // Call fetchTableData immediately on load
             fetchTableData();
 
