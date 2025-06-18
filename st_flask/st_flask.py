@@ -573,7 +573,7 @@ def recalculate_grid():
 
 
 
-#Add trail point to db
+#Add trail to db
 @app.route('/save_trail', methods=['POST'])
 def save_full_trail():
     data = request.json
@@ -599,7 +599,7 @@ def save_full_trail():
 
 
 
-#Load trail from db
+#Load trails from db
 @app.route('/get_trail')
 def get_all_trails():
     conn = mysql.connector.connect(**DATABASE_CONFIG)
@@ -610,6 +610,8 @@ def get_all_trails():
     conn.close()
     return jsonify(rows)
 
+
+#Delete trail with trail trail_id from db
 @app.route('/delete_trail/<int:trail_id>', methods=['POST'])
 def delete_trail(trail_id):
     conn = mysql.connector.connect(**DATABASE_CONFIG)
