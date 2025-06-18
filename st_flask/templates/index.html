@@ -22,6 +22,11 @@
     
     <!-- Icon-->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    
+    <!-- Leaflet.draw for Trail-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
 
 
 
@@ -114,7 +119,9 @@
             <button onclick="confirmClearGrid()">Clear Grid Table</button>
             <button onclick="confirmRecalculateGrid()">Recalculate Grid</button>
         </div>
+        <label><input type="checkbox" id="toggleMarkersLayer" checked> Show Markers Layer</label>
         <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
+        <label><input type="checkbox" id="toggleTrailLayer" checked> Show Trail</label>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
 
@@ -453,74 +460,112 @@
                 attribution: 'Created by QGIS'
             }).addTo(map);
 
+            //Add data layers to map
+            let markersLayerGroup = L.layerGroup().addTo(map);  
             let gridLayerGroup = L.layerGroup().addTo(map);
+            let trailLayerGroup = L.layerGroup().addTo(map);
+
 
             function loadGridLayer() {
-            fetch('/map_grid_layer')
-            .then(res => res.json())
-            .then(data => {
-                gridLayerGroup.clearLayers();
-                data.forEach(square => {
-                    const latMin = square.LAT_MIN;
-                    const latMax = square.LAT_MAX;
-                    const lonMin = square.LON_MIN;
-                    const lonMax = square.LON_MAX;
-                    const total = square.TOTAL_POINTS;
-                    const ok = square.OK_COUNT;
-                    const fail = square.FAIL_COUNT;
-
-                    const ratio = total > 0 ? ok / total : 0;
-                    let color = 'gray';
-                    if (ratio >= 0.9) color = 'green';
-                    else if (ratio >= 0.5) color = 'yellow';
-                    else color = 'red';
-
-                    const bounds = [
-                        [latMin, lonMin],
-                        [latMax, lonMax]
-                    ];
-
-                    const rectangle = L.rectangle(bounds, {
-                        color: color,
-                        fillOpacity: 0.3,
-                        weight: 1
-                    }).addTo(gridLayerGroup);
-
-                    const percent = Math.round((ok / total) * 100);
-
-                    rectangle.bindTooltip(
-                        `Total: ${total}<br>Success: ${ok}<br>Fail: ${fail}<br>Success Rate: ${percent}%`,
-                        { direction: 'top', offset: [0, -5] }
-                    );
-
-                });
-            });
-        }
-
-            // Load markers
-            fetch('/modem_locations')
+                fetch('/map_grid_layer')
                 .then(res => res.json())
                 .then(data => {
-                    data.forEach(item => {
-                        if (!item.LATITUDE || !item.LONGITUDE) return;
+                    gridLayerGroup.clearLayers();
+                    data.forEach(square => {
+                        const latMin = square.LAT_MIN;
+                        const latMax = square.LAT_MAX;
+                        const lonMin = square.LON_MIN;
+                        const lonMax = square.LON_MAX;
+                        const total = square.TOTAL_POINTS;
+                        const ok = square.OK_COUNT;
+                        const fail = square.FAIL_COUNT;
 
-                        const markerColor = (item.CALL_RESULT === 'OK') ? 'green' : 'red';
+                        const ratio = total > 0 ? ok / total : 0;
+                        let color = 'gray';
+                        if (ratio >= 0.9) color = 'green';
+                        else if (ratio >= 0.5) color = 'yellow';
+                        else color = 'red';
 
-                        const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
-                            color: markerColor,
-                            radius: 8,
-                            fillOpacity: 0.6
-                        }).addTo(map);
+                        const bounds = [
+                            [latMin, lonMin],
+                            [latMax, lonMax]
+                        ];
 
-                        marker.bindTooltip(`
-                            <strong>MCC:</strong> ${item.MCC}<br>
-                            <strong>MNC:</strong> ${item.MNC}<br>
-                            <strong>LAC:</strong> ${item.LAC}<br>
-                            <strong>Cell ID:</strong> ${item.CELL_ID}
-                        `, { direction: 'top', offset: [0, -5] });
+                        const rectangle = L.rectangle(bounds, {
+                            color: color,
+                            fillOpacity: 0.3,
+                            weight: 1
+                        }).addTo(gridLayerGroup);
+
+                        const percent = Math.round((ok / total) * 100);
+
+                        rectangle.bindTooltip(
+                            `Total: ${total}<br>Success: ${ok}<br>Fail: ${fail}<br>Success Rate: ${percent}%`,
+                            { direction: 'top', offset: [0, -5] }
+                        );
+
                     });
-                })
-                .catch(err => console.error('Map fetch error:', err));
+                });
+            }
+
+            // Load markers
+            function loadMarkerLayer() {
+                fetch('/modem_locations')
+                    .then(res => res.json())
+                    .then(data => {
+                        markersLayerGroup.clearLayers();
+                        data.forEach(item => {
+                            if (!item.LATITUDE || !item.LONGITUDE) return;
+
+                            const color = (item.CALL_RESULT === 'OK') ? 'green' : 'red';
+
+                            const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
+                                color: color,
+                                radius: 8,
+                                fillOpacity: 0.7
+                            }).addTo(markersLayerGroup);
+
+                            marker.bindTooltip(`
+                                <strong>ARFCN:</strong> ${item.ARFCN || 'N/A'}<br>
+                                <strong>PCI:</strong> ${item.PCI || 'N/A'}<br>
+                                <strong>TIMESTAMP:</strong> ${item.TIMESTAMP || 'N/A'}<br>
+                                <strong>Call Result:</strong> ${item.CALL_RESULT|| 'N/A'}
+                            `, { direction: 'top', offset: [0, -5] });
+
+                            // Full popup on click
+                            let popupContent = "<strong>Full Data:</strong><br><ul style='padding-left: 15px;'>";
+                            for (const key in item) {
+                                popupContent += `<li><strong>${key}:</strong> ${item[key] ?? ''}</li>`;
+                            }
+                            popupContent += "</ul>";
+
+                            marker.bindPopup(popupContent);
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Map fetch error:', err);
+                        alert("Failed to load marker layer.");
+                    });
+            }
+            //Load trail
+            function loadTrail() {
+                fetch('/get_trail')
+                .then(res => res.json())
+                .then(data => {
+                    trailLayerGroup.clearLayers();
+
+                    if (data.length < 2) return; // need at least 2 points to draw
+
+                    const latlngs = data.map(p => [p.LATITUDE, p.LONGITUDE]);
+
+                    L.polyline(latlngs, {
+                        color: 'orange',
+                        weight: 4,
+                        opacity: 0.8
+                    }).addTo(trailLayerGroup);
+                });
+            }
+
 
             map.on('dblclick', function (e) {
                 const lat = e.latlng.lat.toFixed(5);
@@ -534,6 +579,14 @@
                 }
             });
 
+            document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    markersLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(markersLayerGroup);
+                }
+            });
+
             document.getElementById('toggleGridLayer').addEventListener('change', function () {
                 if (this.checked) {
                     gridLayerGroup.addTo(map);
@@ -542,9 +595,72 @@
                 }
             });
 
+        document.getElementById('toggleTrailLayer').addEventListener('change', function () {
+            if (this.checked) {
+                trailLayerGroup.addTo(map);
+            } else {
+                map.removeLayer(trailLayerGroup);
+            }
+        });
+
+
+            const drawnItems = new L.FeatureGroup().addTo(map);
+
+            const drawControl = new L.Control.Draw({
+                edit: {
+                    featureGroup: drawnItems
+                },
+                draw: {
+                    polygon: false,
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: {
+                        shapeOptions: {
+                            color: 'orange',
+                            weight: 4
+                        }
+                    }
+                }
+            });
+            map.addControl(drawControl);
+
+            map.on(L.Draw.Event.CREATED, function (e) {
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+
+            const latlngs = layer.getLatLngs();
+
+            if (confirm("Save this trail?")) {
+                // Send entire polyline to server
+                const trailData = latlngs.map(pt => ({
+                    lat: pt.lat,
+                    lon: pt.lng,
+                    alt: 0  // You can extend for altitude if needed
+                }));
+
+                fetch('/save_full_trail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(trailData)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Trail saved.");
+                    drawnItems.clearLayers();
+                    loadTrail();
+                });
+            }
+        });
+
+
+
             
 
             loadGridLayer();
+            loadMarkerLayer();
+            loadTrail();
     
             // Call fetchTableData immediately on load
             fetchTableData();

@@ -10,7 +10,8 @@ import io
 import math
 
 app = Flask(__name__)
-app.secret_key = 'imsi'  # must be set
+app.secret_key = 'imsi'  
+PORT=8999
 
 # Global state flag to indicate if script is running
 system_mode = 'stop'  # can be 'start' or 'stop'
@@ -138,7 +139,7 @@ def init_db():
                 ALTITUDE  DECIMAL(6,1)   
             )
         ''')
-
+        #Table for grid
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_AVG (
                 ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -151,6 +152,17 @@ def init_db():
                 FAIL_COUNT INT
             )
         ''')
+        #Table for trail
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_TRAIL (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                LATITUDE DECIMAL(13, 5),
+                LONGITUDE DECIMAL(13, 5),
+                ALTITUDE DECIMAL(6, 1),
+                TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         conn.commit()
         print("TBL_ST_SIMBOX_EVENTS initialized successfully.")
     except mysql.connector.Error as err:
@@ -373,6 +385,7 @@ def recalculate_grid_table():
 
 
 
+
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
@@ -398,7 +411,15 @@ def fetch_table_data():
     try:
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM TBL_ST_SIMBOX_EVENTS')
+        cursor.execute('''
+            SELECT ID, MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, 
+            TIMESTAMP, NETWORK, MODEM_MSISDN, MODEL, IMEI,
+            IMSI, REGISTRATION_STATUS, OPERATOR, RAT, ARFCN, BSIC, PSC, PCI, MCC,
+            MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, LATITUDE, LONGITUDE, ALTITUDE
+            FROM TBL_ST_SIMBOX_EVENTS 
+            WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
+            ORDER BY ID DESC
+        ''')
         rows = cursor.fetchall()
         # Get column names dynamically
         column_names = cursor.column_names
@@ -447,7 +468,7 @@ def modem_locations():
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('''
-            SELECT LATITUDE, LONGITUDE, MCC, MNC, LAC, CELL_ID, CALL_RESULT 
+            SELECT LATITUDE, LONGITUDE, MCC, MNC, LAC, CELL_ID, CALL_RESULT, ARFCN, PCI, TIMESTAMP
             FROM TBL_ST_SIMBOX_EVENTS 
             WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
             ORDER BY ID DESC
@@ -550,6 +571,43 @@ def recalculate_grid():
 
 
 
+#Add trail point to db
+@app.route('/save_full_trail', methods=['POST'])
+def save_full_trail():
+    data = request.json
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+
+    # Clear old trail
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_TRAIL')
+    conn.commit()
+
+    # Insert full new trail
+    for point in data:
+        cursor.execute('''
+            INSERT INTO TBL_ST_SIMBOX_TRAIL (LATITUDE, LONGITUDE, ALTITUDE)
+            VALUES (%s, %s, %s)
+        ''', (point['lat'], point['lon'], point['alt']))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'trail saved'})
+
+
+
+#Load trail from db
+@app.route('/get_trail')
+def get_trail():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT LATITUDE, LONGITUDE, ALTITUDE FROM TBL_ST_SIMBOX_TRAIL ORDER BY ID ASC')
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(rows)
+
+
 
 
 
@@ -557,4 +615,4 @@ def recalculate_grid():
 
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
-    app.run(host='0.0.0.0', port=8999)
+    app.run(host='0.0.0.0', port=PORT)
