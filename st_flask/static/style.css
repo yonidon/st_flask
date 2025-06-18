@@ -76,21 +76,40 @@ button:disabled {
     list-style-type: none;
     padding-left: 0;
 }
+
+/*Segment for database table tab*/
 .table-container {
+    max-height: calc(100vh - 300px);  /* adjust depending on header/buttons */
+    overflow: auto;
+    padding: 0;
     margin: 20px auto;
-    padding: 20px;
-    max-width: 90%;
+    max-width: 95%;
+    background-color: #1e1e2f;
     border-radius: 8px;
-    background-color: #1e1e2f; /* Dark blue background */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    overflow-x: auto;
 }
+
 table {
-    width: 100%;
     border-collapse: collapse;
     margin: 0 auto;
     font-size: 14px;
     color: #ffffff;
+    width: max-content;           /* Ensures horizontal scroll if table is wide */
+    min-width: 100%;              /* But still fills available space */
+}
+
+th, td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid #CCC;
+  white-space: nowrap;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #1e2f4a;
+}
+tbody tr:hover {
+  background-color: #2c3e63;
 }
 
 table thead {
@@ -117,6 +136,14 @@ table tbody td {
     padding: 10px;
 }
 
+.dataTables_wrapper {
+  font-size: 0.9em;
+  padding: 10px;
+}
+
+.dataTables_paginate {
+  margin-top: 10px;
+}
 
 /*Phone compapibility*/
 @media (max-width: 768px) {
@@ -207,15 +234,7 @@ table tbody td {
 }
 
 
-/*Segment for table tab*/
-.dataTables_wrapper {
-  font-size: 0.9em;
-  padding: 10px;
-}
 
-.dataTables_paginate {
-  margin-top: 10px;
-}
 
 /*Segment for buttons in modems tab*/
 .button-group {
@@ -285,4 +304,85 @@ table tbody td {
 .badge.stopped {
     background-color: #dc3545;
 }
+
+/*Segment for import button*/
+.db-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.import-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.file-label {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #1f3d7a;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid #3a5ba0;
+}
+
+.file-label span {
+  margin-left: 8px;
+}
+
+
+.file-label:hover {
+  background-color: #2a4f91;
+}
+
+.file-label input[type="file"] {
+  display: none;
+}
+
+.action-button {
+  background-color: #1f3d7a;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.action-button:hover {
+  background-color: #2a4f91;
+}
+
+.hidden {
+  display: none;
+}
+
+.dataTables_length select {
+  background-color: #1e1e2f;  /* Match your dark theme */
+  color: #ffffff;
+  border: 1px solid #444;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.dataTables_length label {
+  color: #ffffff;
+}
+
+
+.table-controls {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+
+
 

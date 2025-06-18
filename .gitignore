@@ -5690,3 +5690,6 @@ st_flask/static/tiles/6/38/25.png
 st_flask/static/tiles/7/76/51.png
 st_flask/static/tiles/8/152/103.png
 st_flask/static/tiles/9/305/207.png
+st_flask/old/curlExample_nogps.sh
+st_flask/old/curlExample_nonRandom.sh
+st_flask/old/curlExample_old.sh

@@ -20,7 +20,6 @@
     <!-- Style for buttons-->
     <link rel="stylesheet" href="{{ url_for('static', filename='all.min.css') }}">
     
-    
     <!-- Icon-->
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 
@@ -29,6 +28,18 @@
 
 </head>
 <body>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="flash-messages">
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+
     <h1>Modem Status</h1>
     <div class="tab-buttons">
     <button class="tab-button active" data-tab="modems-tab">Modems</button>
@@ -67,10 +78,20 @@
     <!-- table-tab starts here -->
 
         <!-- Dynamic Table That shows sql data -->
-         <div class="button-group">
-            <button onclick="confirmClear()">Clear Table</button>
-            <button onclick="window.location.href='/export_csv'">Export to CSV</button>
-         </div>
+         <div class="db-button-group">
+            <button class="action-button" onclick="confirmClear()">Clear Table</button>
+            <button class="action-button" onclick="window.location.href='/export_csv'">Export to CSV</button>
+
+            <form action="/import_csv" method="post" enctype="multipart/form-data" class="import-form">
+                <label class="file-label">
+                    <input type="file" name="file" accept=".csv" required onchange="showFileName(this)">
+                    <span id="fileLabelText">Choose File</span>
+                </label>
+                <button type="submit" class="action-button">Import from CSV</button>
+                
+            </form>
+        </div>
+
         
         <div class="table-container">
             <table id="dataTable">
@@ -90,6 +111,7 @@
     <div id="map-tab" class="tab-panel">  
         <h2>Modem Map</h2>
         <h6>Double click to set default location</h6>
+        <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
 
@@ -152,6 +174,7 @@
             labelSpan.textContent = collapseAll ? "Expand All" : "Collapse All";
             toggleBtn.querySelector('i').className = collapseAll ? "fas fa-expand" : "fas fa-compress";
         });
+        
 
 
 
@@ -171,6 +194,11 @@
                     .then(response => response.json())
                     .then(data => updateModemStatus(data));
             }
+        }
+
+        function showFileName(input) {
+            const fileName = input.files[0]?.name || "Choose File";
+            document.getElementById('fileLabelText').textContent = fileName;
         }
 
 
@@ -311,15 +339,31 @@
                         tbody.appendChild(tr);
                     });
                     // After populating headers and rows:
+                    // Destroy previous DataTable if already initialized
+                    if ($.fn.DataTable.isDataTable('#dataTable')) {
+                        $('#dataTable').DataTable().destroy();
+                    }
+
+                    // Reinitialize DataTable
                     $('#dataTable').DataTable({
                         pageLength: 50,
-                        order: [[0, 'desc']],  // Default sort by first column, descending
+                        order: [[0, 'desc']],
                         scrollX: true
                     });
+
 
                 })
                 .catch(err => console.error('Error fetching table data:', err));
         }
+
+        
+
+        
+
+        
+
+
+
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
@@ -360,12 +404,58 @@
 
             L.control.attribution({ prefix: false }).addTo(map);
 
+            
+
             var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
                 minZoom: 0,
                 maxZoom: 22,
                 tms: false,
                 attribution: 'Created by QGIS'
             }).addTo(map);
+
+            let gridLayerGroup = L.layerGroup().addTo(map);
+
+            function loadGridLayer() {
+            fetch('/map_grid_layer')
+            .then(res => res.json())
+            .then(data => {
+                gridLayerGroup.clearLayers();
+                data.forEach(square => {
+                    const latMin = square.LAT_MIN;
+                    const latMax = square.LAT_MAX;
+                    const lonMin = square.LON_MIN;
+                    const lonMax = square.LON_MAX;
+                    const total = square.TOTAL_POINTS;
+                    const ok = square.OK_COUNT;
+                    const fail = square.FAIL_COUNT;
+
+                    const ratio = total > 0 ? ok / total : 0;
+                    let color = 'gray';
+                    if (ratio >= 0.9) color = 'green';
+                    else if (ratio >= 0.5) color = 'yellow';
+                    else color = 'red';
+
+                    const bounds = [
+                        [latMin, lonMin],
+                        [latMax, lonMax]
+                    ];
+
+                    const rectangle = L.rectangle(bounds, {
+                        color: color,
+                        fillOpacity: 0.3,
+                        weight: 1
+                    }).addTo(gridLayerGroup);
+
+                    const percent = Math.round((ok / total) * 100);
+
+                    rectangle.bindTooltip(
+                        `Total: ${total}<br>Success: ${ok}<br>Fail: ${fail}<br>Success Rate: ${percent}%`,
+                        { direction: 'top', offset: [0, -5] }
+                    );
+
+                });
+            });
+        }
 
             // Load markers
             fetch('/modem_locations')
@@ -403,6 +493,18 @@
                     alert("Default map view saved!");
                 }
             });
+
+            document.getElementById('toggleGridLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    gridLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(gridLayerGroup);
+                }
+            });
+
+            
+
+            loadGridLayer();
     
             // Call fetchTableData immediately on load
             fetchTableData();

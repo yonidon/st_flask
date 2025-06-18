@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, make_response
+from flask import Flask, request, jsonify, render_template, redirect, url_for, make_response, flash
 import subprocess
 import mysql.connector
 from datetime import datetime
@@ -7,13 +7,21 @@ import os
 import configparser
 import csv
 import io
-
+import math
 
 app = Flask(__name__)
+app.secret_key = 'imsi'  # must be set
 
 # Database configuration for remote connection
 #======================================================
 DB_CONFIG_FILE = '/home/guard3/st_flask/st_flask/db_config.ini'
+
+
+#Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
+GRID_FACTOR=2
+GRID_SIZE_LAT = 0.00009*GRID_FACTOR
+GRID_SIZE_LON = 0.0001*GRID_FACTOR
+
 
 def load_db_config():
     config = configparser.ConfigParser()
@@ -127,6 +135,19 @@ def init_db():
                 ALTITUDE  DECIMAL(6,1)   
             )
         ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_AVG (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                LAT_MIN DECIMAL(13,5),
+                LAT_MAX DECIMAL(13,5),
+                LON_MIN DECIMAL(13,5),
+                LON_MAX DECIMAL(13,5),
+                TOTAL_POINTS INT,
+                OK_COUNT INT,
+                FAIL_COUNT INT
+            )
+        ''')
         conn.commit()
         print("TBL_ST_SIMBOX_EVENTS initialized successfully.")
     except mysql.connector.Error as err:
@@ -185,6 +206,14 @@ def insert_modem_data(modem_number, modem_data):
     cursor.close()
     conn.close()
 
+    #Update grid table
+    update_avg_table(
+        float(latitude),
+        float(longitude),
+        modem_data['survey_results']['call_result']
+    )
+
+
 
 #Update call results in DB from TBL_ST_SIMBOX_CALLS. This table is usually updated by the phone receiving the calls from simbox
 def update_call_result():
@@ -227,6 +256,54 @@ def update_call_result():
     finally:
         cursor.close()
         conn.close()
+
+
+#Calculate average of updated/failed calls
+def update_avg_table(lat, lon, call_result):
+    lat_min = math.floor(lat / GRID_SIZE_LAT) * GRID_SIZE_LAT
+    lat_max = lat_min + GRID_SIZE_LAT
+    lon_min = math.floor(lon / GRID_SIZE_LON) * GRID_SIZE_LON
+    lon_max = lon_min + GRID_SIZE_LON
+
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+
+    # Try to update existing square
+    cursor.execute('''
+        SELECT ID FROM TBL_ST_SIMBOX_AVG
+        WHERE LAT_MIN = %s AND LON_MIN = %s
+    ''', (lat_min, lon_min))
+    row = cursor.fetchone()
+
+    if row:
+        id = row[0]
+        if call_result == 'OK':
+            cursor.execute('''
+                UPDATE TBL_ST_SIMBOX_AVG
+                SET TOTAL_POINTS = TOTAL_POINTS + 1,
+                    OK_COUNT = OK_COUNT + 1
+                WHERE ID = %s
+            ''', (id,))
+        else:
+            cursor.execute('''
+                UPDATE TBL_ST_SIMBOX_AVG
+                SET TOTAL_POINTS = TOTAL_POINTS + 1,
+                    FAIL_COUNT = FAIL_COUNT + 1
+                WHERE ID = %s
+            ''', (id,))
+    else:
+        ok_count = 1 if call_result == 'OK' else 0
+        fail_count = 0 if call_result == 'OK' else 1
+        cursor.execute('''
+            INSERT INTO TBL_ST_SIMBOX_AVG
+            (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, TOTAL_POINTS, OK_COUNT, FAIL_COUNT)
+            VALUES (%s, %s, %s, %s, 1, %s, %s)
+        ''', (lat_min, lat_max, lon_min, lon_max, ok_count, fail_count))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
 #Receive json from backend and insert it to mysql table 
 @app.route('/receive_json', methods=['POST'])
@@ -327,6 +404,33 @@ def export_csv():
     response.headers["Content-type"] = "text/csv"
     return response
 
+
+@app.route('/import_csv', methods=['POST'])
+def import_csv():
+    file = request.files.get('file')
+    if not file or not file.filename.endswith('.csv'):
+        flash('Please upload a valid CSV file.')
+        return redirect(request.referrer or '/')
+
+    csv_io = io.StringIO(file.stream.read().decode('utf-8'))
+    reader = csv.reader(csv_io)
+    headers = next(reader)  # Skip header row
+
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+
+    insert_query = f"INSERT INTO TBL_ST_SIMBOX_EVENTS ({', '.join(headers)}) VALUES ({', '.join(['%s'] * len(headers))})"
+
+    for row in reader:
+        cursor.execute(insert_query, row)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash('CSV imported successfully.')
+    return redirect('/')
+
 #Endpoint to clear table
 @app.route('/clear_table', methods=['POST'])
 def clear_table():
@@ -337,6 +441,17 @@ def clear_table():
     cursor.close()
     conn.close()
     return jsonify({'status': 'cleared'})
+
+#Serve map grid layer
+@app.route('/map_grid_layer')
+def map_grid_layer():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM TBL_ST_SIMBOX_AVG')
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(data)
 
 
 
