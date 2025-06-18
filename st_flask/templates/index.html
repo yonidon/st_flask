@@ -24,8 +24,8 @@
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
     
     <!-- Leaflet.draw for Trail-->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.draw.css') }}"/>
+    <script src="{{ url_for('static', filename='leaflet.draw.js') }}"></script>
 
 
 
@@ -554,17 +554,42 @@
                 .then(data => {
                     trailLayerGroup.clearLayers();
 
-                    if (data.length < 2) return; // need at least 2 points to draw
+                    const trails = {};
 
-                    const latlngs = data.map(p => [p.LATITUDE, p.LONGITUDE]);
+                    data.forEach(item => {
+                        if (!trails[item.TRAIL_ID]) {
+                            trails[item.TRAIL_ID] = [];
+                        }
+                        trails[item.TRAIL_ID].push([item.LATITUDE, item.LONGITUDE]);
+                    });
 
-                    L.polyline(latlngs, {
-                        color: 'orange',
-                        weight: 4,
-                        opacity: 0.8
-                    }).addTo(trailLayerGroup);
+                    for (const trailId in trails) {
+                        const polyline = L.polyline(trails[trailId], {
+                            color: 'orange',
+                            weight: 4,
+                            opacity: 0.8
+                        }).addTo(trailLayerGroup);
+
+                        // Attach delete on click
+                        polyline.on('click', function() {
+                            if (confirm(`Delete trail ID ${trailId}?`)) {
+                                deleteTrail(trailId);
+                            }
+                        });
+                    }
                 });
             }
+
+            function deleteTrail(trailId) {
+                fetch(`/delete_trail/${trailId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Trail deleted.");
+                    loadTrail();
+                });
+            }
+
+
 
 
             map.on('dblclick', function (e) {
@@ -640,7 +665,7 @@
                     alt: 0  // You can extend for altitude if needed
                 }));
 
-                fetch('/save_full_trail', {
+                fetch('/save_trail', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(trailData)

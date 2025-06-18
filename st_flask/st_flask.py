@@ -152,10 +152,12 @@ def init_db():
                 FAIL_COUNT INT
             )
         ''')
+
         #Table for trail
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_TRAIL (
                 ID INT AUTO_INCREMENT PRIMARY KEY,
+                TRAIL_ID INT,
                 LATITUDE DECIMAL(13, 5),
                 LONGITUDE DECIMAL(13, 5),
                 ALTITUDE DECIMAL(6, 1),
@@ -572,22 +574,22 @@ def recalculate_grid():
 
 
 #Add trail point to db
-@app.route('/save_full_trail', methods=['POST'])
+@app.route('/save_trail', methods=['POST'])
 def save_full_trail():
     data = request.json
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
 
-    # Clear old trail
-    cursor.execute('DELETE FROM TBL_ST_SIMBOX_TRAIL')
-    conn.commit()
+    # Get next trail ID
+    cursor.execute('SELECT IFNULL(MAX(TRAIL_ID), 0) + 1 FROM TBL_ST_SIMBOX_TRAIL')
+    next_trail_id = cursor.fetchone()[0]
 
-    # Insert full new trail
+    # Insert new trail
     for point in data:
         cursor.execute('''
-            INSERT INTO TBL_ST_SIMBOX_TRAIL (LATITUDE, LONGITUDE, ALTITUDE)
-            VALUES (%s, %s, %s)
-        ''', (point['lat'], point['lon'], point['alt']))
+            INSERT INTO TBL_ST_SIMBOX_TRAIL (TRAIL_ID, LATITUDE, LONGITUDE, ALTITUDE)
+            VALUES (%s, %s, %s, %s)
+        ''', (next_trail_id, point['lat'], point['lon'], point['alt']))
 
     conn.commit()
     cursor.close()
@@ -596,16 +598,27 @@ def save_full_trail():
 
 
 
+
 #Load trail from db
 @app.route('/get_trail')
-def get_trail():
+def get_all_trails():
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT LATITUDE, LONGITUDE, ALTITUDE FROM TBL_ST_SIMBOX_TRAIL ORDER BY ID ASC')
+    cursor.execute('SELECT TRAIL_ID, LATITUDE, LONGITUDE FROM TBL_ST_SIMBOX_TRAIL ORDER BY TRAIL_ID, ID')
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
     return jsonify(rows)
+
+@app.route('/delete_trail/<int:trail_id>', methods=['POST'])
+def delete_trail(trail_id):
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_TRAIL WHERE TRAIL_ID = %s', (trail_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'deleted'})
 
 
 
