@@ -47,9 +47,9 @@
 
     <h1>Modem Status</h1>
     <div class="tab-buttons">
-    <button class="tab-button active" data-tab="modems-tab">Modems</button>
-    <button class="tab-button" data-tab="table-tab">Database</button>
-    <button class="tab-button" data-tab="map-tab">Map</button>
+    <button class="tab-button active" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
+    <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
+    <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
     </div>
 
     <div id="modems-tab" class="tab-panel active">
@@ -84,15 +84,15 @@
 
         <!-- Dynamic Table That shows sql data -->
          <div class="db-button-group">
-            <button class="action-button" onclick="confirmClear()">Clear Table</button>
-            <button class="action-button" onclick="window.location.href='/export_csv'">Export to CSV</button>
+            <button class="action-button" onclick="confirmClear()"><i class="fas fa-trash"></i> Clear Table</button>
+            <button class="action-button" onclick="window.location.href='/export_csv'"><i class="fas fa-file-excel"></i> Export to CSV</button>
 
             <form action="/import_csv" method="post" enctype="multipart/form-data" class="import-form">
                 <label class="file-label">
                     <input type="file" name="file" accept=".csv" required onchange="showFileName(this)">
-                    <span id="fileLabelText">Choose File</span>
+                    <span id="fileLabelText"><i class="fas fa-file"></i> Choose File</span>
                 </label>
-                <button type="submit" class="action-button">Import from CSV</button>
+                <button type="submit" class="action-button"><i class="fas fa-cloud-upload"></i> Import from CSV</button>
                 
             </form>
         </div>
@@ -116,12 +116,14 @@
     <div id="map-tab" class="tab-panel">  
         <h5>Double click to set default location</h5>
         <div class="map-tools">
-            <button onclick="confirmClearGrid()">Clear Grid Table</button>
-            <button onclick="confirmRecalculateGrid()">Recalculate Grid</button>
+            <button onclick="confirmClearGrid()"><i class="fas fa-trash"></i> Clear Grid Table</button>
+            <button onclick="confirmRecalculateGrid()"><i class="fas fa-calculator"></i> Recalculate Grid</button>
         </div>
-        <label><input type="checkbox" id="toggleMarkersLayer" checked> Show Markers Layer</label>
-        <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
-        <label><input type="checkbox" id="toggleTrailLayer" checked> Show Trail</label>
+        <div class="layer-toggle-group">
+            <label><input type="checkbox" id="toggleMarkersLayer" checked> Show Markers Layer</label>
+            <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
+            <label><input type="checkbox" id="toggleTrailLayer" checked> Show Trail</label>
+        </div>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
 
@@ -581,9 +583,9 @@
 
                     for (const trailId in trails) {
                         const polyline = L.polyline(trails[trailId], {
-                            color: 'orange',
+                            color: 'black',
                             weight: 4,
-                            opacity: 0.8 ,
+                            opacity: 1.0 ,
                             dashArray: '10,6',
                             lineCap: 'round',
                             pane: 'trailPane'

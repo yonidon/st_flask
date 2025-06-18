@@ -394,6 +394,27 @@ table tbody td {
 }
 
 
+/*Segment for map layer toggle buttons*/
+.layer-toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.layer-toggle-group label {
+    background-color: #1f3d7a;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #3a5ba0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
 
 
 
