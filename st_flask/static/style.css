@@ -323,14 +323,21 @@ table tbody td {
 }
 
 .file-label {
-  display: inline-block;
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background-color: #1f3d7a;
   color: white;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 10px 20px;
   border: 1px solid #3a5ba0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
 }
+
+
+
 
 .file-label span {
   margin-left: 8px;
@@ -414,6 +421,92 @@ table tbody td {
     gap: 8px;
     white-space: nowrap;
 }
+
+/*Segment for Tab buttons*/
+.primary-button-group {
+  display: inline-flex;
+  justify-content: center;
+  margin: 20px auto;
+  border: 1px solid #0d3e72;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.primary-button-group button {
+  background-color: #145ea8;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-right: 1px solid #0d3e72;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.primary-button-group button:last-child {
+  border-right: none;
+}
+
+.primary-button-group button.active {
+  background-color: #0d3e72;
+}
+
+.primary-button-group button:hover {
+  background-color: #1a70c8;
+}
+
+.primary-button-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+
+/*Segment for buttons inside tabs*/
+.secondary-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  border: 1px solid #3a5ba0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin: 20px 0;
+}
+
+
+.secondary-button-group button {
+  flex: 1 0 auto;
+  background-color: #1f3d7a;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-right: 1px solid #3a5ba0;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 140px;
+}
+
+.secondary-button-group button:last-child {
+  border-right: none;
+}
+
+.secondary-button-group button:hover {
+  background-color: #2a4f91;
+}
+
+.import-button-group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
+
 
 
 

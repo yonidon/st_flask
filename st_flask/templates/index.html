@@ -45,17 +45,19 @@
     {% endif %}
     {% endwith %}
 
-    <h1>Modem Status</h1>
-    <div class="tab-buttons">
-    <button class="tab-button active" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
-    <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
-    <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
+    <h1>Modem Tracker</h1>
+    <div class="primary-button-container">
+        <div class="primary-button-group">
+            <button class="tab-button active" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
+            <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
+            <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
+        </div>
     </div>
 
     <div id="modems-tab" class="tab-panel active">
     <!-- start of modem square tab-->
 
-        <div class="button-group">
+        <div class="secondary-button-group">
             <div class="button-bar">
                 <button id="startScript"><i class="fas fa-play"></i> Start</button>
                 <button id="stopScript"><i class="fas fa-stop"></i> Stop</button>
@@ -83,19 +85,21 @@
     <!-- table-tab starts here -->
 
         <!-- Dynamic Table That shows sql data -->
-         <div class="db-button-group">
+        <div class="secondary-button-group">
             <button class="action-button" onclick="confirmClear()"><i class="fas fa-trash"></i> Clear Table</button>
             <button class="action-button" onclick="window.location.href='/export_csv'"><i class="fas fa-file-excel"></i> Export to CSV</button>
 
             <form action="/import_csv" method="post" enctype="multipart/form-data" class="import-form">
-                <label class="file-label">
-                    <input type="file" name="file" accept=".csv" required onchange="showFileName(this)">
-                    <span id="fileLabelText"><i class="fas fa-file"></i> Choose File</span>
-                </label>
-                <button type="submit" class="action-button"><i class="fas fa-cloud-upload"></i> Import from CSV</button>
-                
+                <div class="import-button-group">
+                    <label class="file-label">
+                        <input type="file" name="file" accept=".csv" required onchange="showFileName(this)">
+                        <span id="fileLabelText"><i class="fas fa-file"></i> Choose File</span>
+                    </label>
+                    <button type="submit" class="action-button"><i class="fas fa-cloud-upload"></i> Import</button>
+                </div>
             </form>
         </div>
+
 
         
         <div class="table-container">
@@ -115,7 +119,7 @@
 
     <div id="map-tab" class="tab-panel">  
         <h5>Double click to set default location</h5>
-        <div class="map-tools">
+        <div class="secondary-button-group">
             <button onclick="confirmClearGrid()"><i class="fas fa-trash"></i> Clear Grid Table</button>
             <button onclick="confirmRecalculateGrid()"><i class="fas fa-calculator"></i> Recalculate Grid</button>
         </div>
