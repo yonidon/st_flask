@@ -109,14 +109,17 @@
     </div><!-- table-tab ends here -->
 
     <div id="map-tab" class="tab-panel">  
-        <h2>Modem Map</h2>
-        <h6>Double click to set default location</h6>
+        <h5>Double click to set default location</h5>
+        <div class="map-tools">
+            <button onclick="confirmClearGrid()">Clear Grid Table</button>
+            <button onclick="confirmRecalculateGrid()">Recalculate Grid</button>
+        </div>
         <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
 
     <script>
-        let autoRefresh = true;
+        let autoRefresh = JSON.parse(localStorage.getItem('autoRefresh') || 'true');
         //let scriptRunning = false;
         const fetchDataInterval = 1000; 
         const updateCallResultInterval = 60000; //Interval for updating call result. Currently using the button instead
@@ -130,24 +133,23 @@
             fetch('/start_script', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data.status);
-                    scriptRunning = true;
                     updateStatusIndicators();
                 });
         });
+
 
         document.getElementById('stopScript').addEventListener('click', function() {
             fetch('/stop_script', { method: 'POST' })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data.status);
-                    scriptRunning = false;
                     updateStatusIndicators();
                 });
         });
 
+        
         document.getElementById('toggleAutoRefresh').addEventListener('click', function() {
             autoRefresh = !autoRefresh;
+            localStorage.setItem('autoRefresh', autoRefresh);
             updateStatusIndicators();
         });
 
@@ -299,10 +301,44 @@
             });
         }
 
-        function updateStatusIndicators() {
-            //document.getElementById('scriptStatusValue').textContent = scriptRunning ? 'Running' : 'Stopped';
-            document.getElementById('refreshStatusValue').textContent = autoRefresh ? 'On' : 'Off';
+        function confirmClearGrid() {
+            if (confirm("Are you sure you want to clear the grid table?")) {
+                fetch('/clear_grid_table', { method: 'POST' })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Grid table cleared.");
+                    loadGridLayer();
+                });
+            }
         }
+
+        function confirmRecalculateGrid() {
+            if (confirm("This may take a few seconds. Recalculate entire grid?")) {
+                fetch('/recalculate_grid', { method: 'POST' })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Grid recalculation complete.");
+                    loadGridLayer();
+                });
+            }
+        }
+
+
+        function updateStatusIndicators() {
+            fetch('/get_mode')
+                .then(res => res.json())
+                .then(data => {
+                    const mode = data.mode;
+                    const scriptValue = document.getElementById('scriptStatusValue');
+                    scriptValue.textContent = mode === 'start' ? 'Running' : 'Stopped';
+                    scriptValue.className = 'badge ' + (mode === 'start' ? 'running' : 'stopped');
+                });
+            // Update refresh status locally
+            const refreshValue = document.getElementById('refreshStatusValue');
+            refreshValue.textContent = autoRefresh ? 'On' : 'Off';
+            refreshValue.className = 'badge ' + (autoRefresh ? 'on' : 'off');
+        }
+
 
 	    function convertEpochToReadableTime(epoch) {
     		const date = new Date(epoch * 1000); // Convert seconds to milliseconds
@@ -367,6 +403,10 @@
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
+            
+            //Update if script is started or stopped
+            updateStatusIndicators();
+            
             // Tab switching logic
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabPanels = document.querySelectorAll('.tab-panel');

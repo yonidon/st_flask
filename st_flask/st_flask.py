@@ -12,13 +12,16 @@ import math
 app = Flask(__name__)
 app.secret_key = 'imsi'  # must be set
 
+# Global state flag to indicate if script is running
+system_mode = 'stop'  # can be 'start' or 'stop'
+
 # Database configuration for remote connection
 #======================================================
 DB_CONFIG_FILE = '/home/guard3/st_flask/st_flask/db_config.ini'
 
 
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
-GRID_FACTOR=2
+GRID_FACTOR=10
 GRID_SIZE_LAT = 0.00009*GRID_FACTOR
 GRID_SIZE_LON = 0.0001*GRID_FACTOR
 
@@ -258,7 +261,7 @@ def update_call_result():
         conn.close()
 
 
-#Calculate average of updated/failed calls
+#Calculate average of updated/failed calls. Is called only when new records are added
 def update_avg_table(lat, lon, call_result):
     lat_min = math.floor(lat / GRID_SIZE_LAT) * GRID_SIZE_LAT
     lat_max = lat_min + GRID_SIZE_LAT
@@ -305,18 +308,89 @@ def update_avg_table(lat, lon, call_result):
     conn.close()
 
 
-#Receive json from backend and insert it to mysql table 
+#Recalculate grid table
+def recalculate_grid_table():
+    # Load current grid size dynamically
+    lat_size, lon_size = GRID_SIZE_LAT ,GRID_SIZE_LON
+
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+
+    # Start fresh
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_AVG')
+    conn.commit()
+
+    # Fetch all data from events table
+    cursor.execute('SELECT LATITUDE, LONGITUDE, CALL_RESULT FROM TBL_ST_SIMBOX_EVENTS')
+    rows = cursor.fetchall()
+
+    grid = {}  # in-memory aggregation
+
+    for row in rows:
+        lat = float(row['LATITUDE'])
+        lon = float(row['LONGITUDE'])
+        call_result = row['CALL_RESULT']
+
+        lat_min = math.floor(lat / lat_size) * lat_size
+        lat_max = lat_min + lat_size
+        lon_min = math.floor(lon / lon_size) * lon_size
+        lon_max = lon_min + lon_size
+
+        key = (lat_min, lon_min)
+
+        if key not in grid:
+            grid[key] = {
+                'LAT_MIN': lat_min,
+                'LAT_MAX': lat_max,
+                'LON_MIN': lon_min,
+                'LON_MAX': lon_max,
+                'TOTAL_POINTS': 0,
+                'OK_COUNT': 0,
+                'FAIL_COUNT': 0
+            }
+
+        grid[key]['TOTAL_POINTS'] += 1
+        if call_result == 'OK':
+            grid[key]['OK_COUNT'] += 1
+        else:
+            grid[key]['FAIL_COUNT'] += 1
+
+    # Insert into AVG table
+    insert_query = '''
+        INSERT INTO TBL_ST_SIMBOX_AVG (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, TOTAL_POINTS, OK_COUNT, FAIL_COUNT)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    '''
+
+    for square in grid.values():
+        cursor.execute(insert_query, (
+            square['LAT_MIN'], square['LAT_MAX'], square['LON_MIN'], square['LON_MAX'],
+            square['TOTAL_POINTS'], square['OK_COUNT'], square['FAIL_COUNT']
+        ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+
+#Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data
+    global latest_json_data, system_mode
     data = request.json
-    latest_json_data = data  # Update the global latest_json_data with the received JSON
-    senders = data.get('senders', {})
+    latest_json_data = data  # update global json
 
+    if system_mode == 'stop':
+        # Just acknowledge stop mode, discard incoming data
+        return jsonify({"status": "stop"}), 200
+
+    # If in start mode, handle as before
+    senders = data.get('senders', {})
     for modem_number, modem_data in senders.items():
         insert_modem_data(modem_number, modem_data)
 
-    return jsonify({"status": "success"}), 200
+    return jsonify({"status": "start"}), 200
+
 
 #Fetch data for table tab
 @app.route('/fetch_table_data', methods=['GET'])
@@ -341,17 +415,21 @@ def fetch_table_data():
 def latest_json():
     return jsonify(latest_json_data)
 
-#Starts backend script, need to change this to a new script alex will make
 @app.route('/start_script', methods=['POST'])
 def start_script():
-    with open('/home/guard3/st_simbox/script_output.log', 'w') as f:
-        subprocess.Popen(['python3', '/home/guard3/st_simbox/st_simbox.py', 'st_simbox.ini'], cwd='/home/guard3/st_simbox', stderr=f, stdout=f)
-    return jsonify({"status": "script started"})
+    global system_mode
+    system_mode = 'start'
+    return jsonify({"status": "start mode active"})
 
 @app.route('/stop_script', methods=['POST'])
 def stop_script():
-    subprocess.Popen(['sudo', 'pkill', '-f', 'st_simbox.py'])
-    return jsonify({"status": "script stopped"})
+    global system_mode
+    system_mode = 'stop'
+    return jsonify({"status": "stop mode active"})
+
+@app.route('/get_mode', methods=['GET'])
+def get_mode():
+    return jsonify({"mode": system_mode})
 
 @app.route('/')
 def index():
@@ -404,7 +482,7 @@ def export_csv():
     response.headers["Content-type"] = "text/csv"
     return response
 
-
+#Endpoint to import csv to main table
 @app.route('/import_csv', methods=['POST'])
 def import_csv():
     file = request.files.get('file')
@@ -452,6 +530,27 @@ def map_grid_layer():
     cursor.close()
     conn.close()
     return jsonify(data)
+
+
+#Clear grid table
+@app.route('/clear_grid_table', methods=['POST'])
+def clear_grid_table():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_AVG')
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'cleared'})
+
+@app.route('/recalculate_grid', methods=['POST'])
+def recalculate_grid():
+    recalculate_grid_table()
+    return jsonify({'status': 'recalculated'})
+
+
+
+
 
 
 

@@ -14,7 +14,8 @@ def generate_modem(modem_number):
     lon = round(random.uniform(LON_MIN, LON_MAX), 6)
     alt = round(random.uniform(40.0, 50.0), 1)
 
-    call_result = random.choice(["OK", "failed_timeout", "failed_atd", ""])
+    #call_result = random.choice(["OK", "failed_timeout", "failed_atd", ""])
+    call_result = random.choice(["OK", "failed_timeout"])
 
     modem = {
         "status": "IDLE",

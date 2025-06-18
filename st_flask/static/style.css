@@ -16,7 +16,7 @@ h2 {
     color: #ffffff;
 }
 
-h6 {
+h5 {
     text-align: center;
     color: #ffffff;
 }
@@ -381,6 +381,16 @@ table tbody td {
   align-items: center;
   gap: 10px;
   justify-content: center;
+}
+
+/*Segment for map buttons*/
+.map-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
 }
 
 
