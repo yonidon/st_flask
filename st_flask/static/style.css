@@ -1,3 +1,28 @@
+.main-header {
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  margin: 20px 0 30px 0;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #b3394e 0%, #1a70c8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
+  }
+  to {
+    text-shadow: 0 0 15px rgba(26, 112, 200, 0.9);
+  }
+}
+
+
 body {
     font-family: Arial, sans-serif;
     background-color: #0b1e39;
@@ -478,18 +503,20 @@ table tbody td {
 
 
 .secondary-button-group button {
-  flex: 1 0 auto;
   background-color: #1f3d7a;
   color: white;
   padding: 12px 24px;
-  border: none;
-  border-right: 1px solid #3a5ba0;
+  border: 1px solid #3a5ba0;
+  border-radius: 8px;
   font-weight: 500;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  min-width: 140px;
+  
+  flex: 1 1 0;
+  max-width: 200px;  /* ✅ Cap max button width */
 }
+
 
 .secondary-button-group button:last-child {
   border-right: none;
@@ -498,6 +525,8 @@ table tbody td {
 .secondary-button-group button:hover {
   background-color: #2a4f91;
 }
+
+
 
 .import-button-group {
   display: flex;

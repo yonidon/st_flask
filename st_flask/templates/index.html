@@ -27,6 +27,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='leaflet.draw.css') }}"/>
     <script src="{{ url_for('static', filename='leaflet.draw.js') }}"></script>
 
+    <script src="{{ url_for('static', filename='typed.js@2.0.12') }}"></script>
+
 
 
 
@@ -45,7 +47,7 @@
     {% endif %}
     {% endwith %}
 
-    <h1>Modem Tracker</h1>
+    <h1 class="main-header"><span id="animatedHeader"></span></h1>
     <div class="primary-button-container">
         <div class="primary-button-group">
             <button class="tab-button active" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
@@ -132,6 +134,14 @@
     </div>
 
     <script>
+
+        //Text for main header
+        new Typed('#animatedHeader', {
+            strings: ["Simbox Tracker"],
+            typeSpeed: 100,
+            backSpeed: 50,
+            loop: false
+        });
         let autoRefresh = JSON.parse(localStorage.getItem('autoRefresh') || 'true');
         //let scriptRunning = false;
         const fetchDataInterval = 1000; 
@@ -447,6 +457,13 @@
                     const tabId = button.dataset.tab;
                     activateTab(tabId);
                     localStorage.setItem('activeTab', tabId); // Save to storage
+                    // ✅ When activating map tab, force map resize
+                        if (tabId === 'map-tab') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+
                 });
             });
 
@@ -586,22 +603,38 @@
                     });
 
                     for (const trailId in trails) {
-                        const polyline = L.polyline(trails[trailId], {
+                        const latlngs = trails[trailId];
+
+                        // Draw the trail line
+                        const polyline = L.polyline(latlngs, {
                             color: 'black',
-                            weight: 4,
-                            opacity: 1.0 ,
+                            weight: 5,
+                            opacity: 0.8,
                             dashArray: '10,6',
                             lineCap: 'round',
                             pane: 'trailPane'
                         }).addTo(trailLayerGroup);
 
-                        // Attach delete on click
+                        // Add markers for each point
+                        latlngs.forEach(latlng => {
+                            const icon = L.divIcon({
+                                html: '<i class="fas fa-map-marker-alt fa-2x" style="color: blue;"></i>',
+                                className: '',  // No extra wrapper class
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 30]  // Adjust so tip of icon points to coordinate
+                            });
+
+                            L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroup);
+                        });
+
+
                         polyline.on('click', function() {
                             if (confirm(`Delete trail ID ${trailId}?`)) {
                                 deleteTrail(trailId);
                             }
                         });
                     }
+
                 });
             }
 

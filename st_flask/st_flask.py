@@ -11,7 +11,7 @@ import math
 
 app = Flask(__name__)
 app.secret_key = 'imsi'  
-PORT=8999
+PORT=8999 #Port to run web server on
 
 # Global state flag to indicate if script is running
 system_mode = 'stop'  # can be 'start' or 'stop'
@@ -19,7 +19,6 @@ system_mode = 'stop'  # can be 'start' or 'stop'
 # Database configuration for remote connection
 #======================================================
 DB_CONFIG_FILE = '/home/guard3/st_flask/st_flask/db_config.ini'
-
 
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
 GRID_FACTOR=10
@@ -166,7 +165,7 @@ def init_db():
         ''')
 
         conn.commit()
-        print("TBL_ST_SIMBOX_EVENTS initialized successfully.")
+        print("Tables initialized successfully.")
     except mysql.connector.Error as err:
         print(f"Error initializing database: {err}")
     finally:
@@ -185,7 +184,7 @@ def insert_modem_data(modem_number, modem_data):
     readable_timestamp = convert_epoch_to_datetime(modem_data['ts'])
 
     #Parse gps coordinates from json
-    gps_string_from_modem = modem_data['survey_results']['gps_location'] # Use .get() for safer access
+    gps_string_from_modem = modem_data['survey_results']['gps_location'] 
     latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
 
     cursor.execute('''
@@ -208,9 +207,9 @@ def insert_modem_data(modem_number, modem_data):
         modem_data['survey_results']['lac'], modem_data['survey_results']['cell_id'],
         modem_data['survey_results']['rssi'], modem_data['survey_results']['snr'],
         modem_data['survey_results']['call_result'], modem_data['survey_results']['sms_result'],
-        latitude, # Passed directly
-        longitude, # Passed directly
-        altitude # Passed directly
+        latitude, 
+        longitude, 
+        altitude 
     ))
     
 
