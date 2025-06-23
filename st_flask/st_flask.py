@@ -15,6 +15,7 @@ PORT=8999 #Port to run web server on
 
 # Global state flag to indicate if script is running
 system_mode = 'stop'  # can be 'start' or 'stop'
+current_gps_location = ""
 
 # Database configuration for remote connection
 #======================================================
@@ -183,9 +184,14 @@ def insert_modem_data(modem_number, modem_data):
     # Convert epoch timestamp to MySQL-compatible format
     readable_timestamp = convert_epoch_to_datetime(modem_data['ts'])
 
-    #Parse gps coordinates from json
+    #Parse gps coordinates from json for each sim
     gps_string_from_modem = modem_data['survey_results']['gps_location'] 
-    latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
+    try:
+        latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
+    except Exception:
+        print("Failed to get GPS")
+        latitude, longitude, altitude = None, None, None
+
 
     cursor.execute('''
         INSERT INTO TBL_ST_SIMBOX_EVENTS (
@@ -223,11 +229,13 @@ def insert_modem_data(modem_number, modem_data):
     conn.close()
 
     #Update grid table
-    update_avg_table(
-        float(latitude),
-        float(longitude),
-        modem_data['survey_results']['call_result']
-    )
+    if latitude is not None and longitude is not None:
+        update_avg_table(
+            float(latitude),
+            float(longitude),
+            modem_data['survey_results']['call_result']
+        )
+
 
 
 
@@ -334,7 +342,7 @@ def recalculate_grid_table():
     conn.commit()
 
     # Fetch all data from events table
-    cursor.execute('SELECT LATITUDE, LONGITUDE, CALL_RESULT FROM TBL_ST_SIMBOX_EVENTS')
+    cursor.execute('SELECT LATITUDE, LONGITUDE, CALL_RESULT FROM TBL_ST_SIMBOX_EVENTS WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL')
     rows = cursor.fetchall()
 
     grid = {}  # in-memory aggregation
@@ -390,9 +398,15 @@ def recalculate_grid_table():
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data, system_mode
+    global latest_json_data, system_mode, current_gps_location
     data = request.json
     latest_json_data = data  # update global json
+
+    #Update global gps lock status
+    gps_location = data.get("gps_location", "")
+    print(f"GPS: {gps_location}")
+    #if gps_location and gps_location.strip() != "":
+    current_gps_location = gps_location  # only update when non-empty
 
     if system_mode == 'stop':
         # Just acknowledge stop mode, discard incoming data
@@ -418,7 +432,6 @@ def fetch_table_data():
             IMSI, REGISTRATION_STATUS, OPERATOR, RAT, ARFCN, BSIC, PSC, PCI, MCC,
             MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, LATITUDE, LONGITUDE, ALTITUDE
             FROM TBL_ST_SIMBOX_EVENTS 
-            WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
             ORDER BY ID DESC
         ''')
         rows = cursor.fetchall()
@@ -451,7 +464,11 @@ def stop_script():
 
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
-    return jsonify({"mode": system_mode})
+    return jsonify({
+        "mode": system_mode,
+        "gps_location": current_gps_location
+    })
+
 
 @app.route('/')
 def index():

@@ -50,20 +50,32 @@
     <h1 class="main-header"><span id="animatedHeader"></span></h1>
     <div class="primary-button-container">
         <div class="primary-button-group">
-            <button class="tab-button active" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
+            <button class="tab-button active" data-tab="main-tab"><i class="fas fa-house"></i> Main</button>
+            <button class="tab-button" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
             <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
             <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
         </div>
     </div>
 
-    <div id="modems-tab" class="tab-panel active">
-    <!-- start of modem square tab-->
-
+    <div id="main-tab" class="tab-panel active">
         <div class="secondary-button-group">
             <div class="button-bar">
                 <button id="startScript"><i class="fas fa-play"></i> Start</button>
                 <button id="stopScript"><i class="fas fa-stop"></i> Stop</button>
             </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="scriptStatusMain">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
+            <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
+        </div>
+    </div>
+
+
+    <div id="modems-tab" class="tab-panel">
+    <!-- start of modem square tab-->
+
+        <div class="secondary-button-group">
             <div class="button-bar">
                 <button id="toggleAutoRefresh"><i class="fas fa-sync-alt"></i> Auto-Refresh</button>
                 <button id="toggleCollapseAll">
@@ -73,7 +85,6 @@
         </div>
 
         <div class="status-bar">
-            <span id="scriptStatus">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
             <span id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue" class="badge on">On</span></span>
         </div>
         
@@ -217,7 +228,14 @@
             if (autoRefresh) {
                 fetch('/latest_json')
                     .then(response => response.json())
-                    .then(data => updateModemStatus(data));
+                    .then(data => {
+                        if (data.senders && Object.keys(data.senders).length > 0) {
+                            updateModemStatus(data);
+                        } else {
+                            console.log("Empty modem data; skipping modem update");
+                        }
+                        updateStatusIndicators();
+                    });
             }
         }
 
@@ -355,6 +373,16 @@
                     const scriptValue = document.getElementById('scriptStatusValue');
                     scriptValue.textContent = mode === 'start' ? 'Running' : 'Stopped';
                     scriptValue.className = 'badge ' + (mode === 'start' ? 'running' : 'stopped');
+
+                    // GPS status
+                    const gpsValue = document.getElementById('gpsStatusValue');
+                    if (data.gps_location && data.gps_location.trim() !== "") {
+                        gpsValue.textContent = 'Up';
+                        gpsValue.className = 'badge gps-up';
+                    } else {
+                        gpsValue.textContent = 'Down';
+                        gpsValue.className = 'badge gps-down';
+                    }
                 });
             // Update refresh status locally
             const refreshValue = document.getElementById('refreshStatusValue');
@@ -426,6 +454,17 @@
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
+
+            // On page load, always load latest modem state once
+            fetch('/latest_json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.senders && Object.keys(data.senders).length > 0) {
+                        updateModemStatus(data);
+                    }
+                    updateStatusIndicators(data);  // <-- also update status indicators immediately
+                });
+
             
             //Update if script is started or stopped
             updateStatusIndicators();
@@ -609,7 +648,7 @@
                         const polyline = L.polyline(latlngs, {
                             color: 'black',
                             weight: 5,
-                            opacity: 0.8,
+                            opacity: 1.0,
                             dashArray: '10,6',
                             lineCap: 'round',
                             pane: 'trailPane'

@@ -315,7 +315,7 @@ table tbody td {
 }
 
 .badge.on {
-    background-color: #28a745;
+    background-color: green;
 }
 
 .badge.off {
@@ -323,12 +323,23 @@ table tbody td {
 }
 
 .badge.running {
-    background-color: #007bff;
+    background-color: green;
 }
 
 .badge.stopped {
-    background-color: #dc3545;
+    background-color: #6c757d;
 }
+
+.badge.gps-up {
+    background-color: green !important;
+    color: white !important;
+}
+
+.badge.gps-down {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+
 
 /*Segment for import button*/
 .db-button-group {
@@ -449,7 +460,8 @@ table tbody td {
 
 /*Segment for Tab buttons*/
 .primary-button-group {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   margin: 20px auto;
   border: 1px solid #0d3e72;

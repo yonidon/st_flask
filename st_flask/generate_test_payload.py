@@ -57,7 +57,7 @@ def generate_modem(modem_number):
 # Build full payload
 payload = {
     "simbox_name": "PC",
-
+    "gps_location": "32.5255,34.2442,43.1",
     "psms_name": "PSMS",
     "status": "IDLE",
     "senders": {str(i): generate_modem(i) for i in range(1, 17)}
