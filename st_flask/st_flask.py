@@ -16,7 +16,8 @@ PORT=8999 #Port to run web server on
 
 # Global state flag to indicate if script is running
 system_mode = 'stop'  # can be 'start' or 'stop'
-current_gps_location = ""
+current_gps_location = ''   # from backend modem JSON requests
+browser_gps_location = ''  # from browser geolocation updates
 
 # Database configuration for remote connection
 #======================================================
@@ -81,12 +82,15 @@ def parse_gps_location(gps_location_string):
         parts = coordinates_part.split(',')
 
         # Ensure we have at least 3 parts (latitude, longitude, altitude)
-        if len(parts) >= 3:
+        if len(parts) >= 2:
             latitude = float(parts[0])
             longitude = float(parts[1])
-            altitude = float(parts[2])
+            if len(parts) >= 3:
+                altitude = float(parts[2])
+            else:
+                altitude = 0
         else:
-            print(f"Warning: Insufficient parts in GPS string '{coordinates_part}'. Expected 3, got {len(parts)}.")
+            print(f"Warning: Insufficient parts in GPS string '{coordinates_part}'. Expected 2 or 3, got {len(parts)}.")
 
     except (ValueError, IndexError) as e:
         print(f"Error parsing GPS location string '{gps_location_string}': {e}")
@@ -399,24 +403,26 @@ def recalculate_grid_table():
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data, system_mode, current_gps_location
+    global latest_json_data, system_mode, current_gps_location, browser_gps_location
     data = request.json
     latest_json_data = data  # update global json
 
     #Update global gps lock status
     gps_location = data.get("gps_location", "")
-    print(f"GPS: {gps_location}")
-    #if gps_location and gps_location.strip() != "":
-    current_gps_location = gps_location  # only update when non-empty
+   
+    if gps_location and gps_location.strip() != "":
+        current_gps_location = gps_location  # only update when non-empty
+    else:
+        current_gps_location = browser_gps_location
 
     if system_mode == 'stop':
         # Just acknowledge stop mode, discard incoming data
         return jsonify({"status": "stop"}), 200
-
+    print(f"GPS: {current_gps_location}")
     # If in start mode, handle as before
     senders = data.get('senders', {})
     for modem_number, modem_data in senders.items():
-        insert_modem_data(modem_number, modem_data,gps_location)
+        insert_modem_data(modem_number, modem_data,current_gps_location)
 
     return jsonify({"status": "start"}), 200
 
@@ -465,9 +471,13 @@ def stop_script():
 
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
+
+    global current_gps_location, browser_gps_location
+    effective_gps_location = current_gps_location or browser_gps_location or ""
+
     return jsonify({
         "mode": system_mode,
-        "gps_location": current_gps_location
+        "gps_location": effective_gps_location
     })
 
 
@@ -639,14 +649,19 @@ def delete_trail(trail_id):
     conn.close()
     return jsonify({'status': 'deleted'})
 
+#If browser got location then use it instead
+@app.route('/update_browser_location', methods=['POST'])
+def update_browser_location():
+    global browser_gps_location
+    data = request.json
+    browser_gps_location = data.get("gps_location", "")
+    return jsonify({"status": "received"}), 200
 
 
 
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
     app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
-
-
 
 
 #How to create certificate:

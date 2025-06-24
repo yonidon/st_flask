@@ -544,10 +544,15 @@
             map.createPane("gridPane");
             map.createPane("markerPane");
             map.createPane("trailPane");
+            map.createPane("trailMarkerPane");
 
             map.getPane("gridPane").style.zIndex = 400;
             map.getPane("markerPane").style.zIndex = 500;
             map.getPane("trailPane").style.zIndex = 600;
+            map.getPane("trailMarkerPane").style.zIndex = 300;
+
+            
+        
 
             //Add layers to map
             let gridLayerGroup = L.layerGroup().addTo(map);
@@ -676,7 +681,7 @@
                             opacity: 1.0,
                             dashArray: '10,6',
                             lineCap: 'round',
-                            pane: 'trailPane'
+                            pane: 'trailMarkerPane'
                         });
 
                         polyline.addTo(trailLayerGroup);
@@ -854,13 +859,6 @@
             const userLat = position.coords.latitude;
             const userLng = position.coords.longitude;
 
-            /* Create the initial marker
-            userMarker = L.circleMarker([userLat, userLng], {
-                color: 'blue',
-                radius: 10,
-                fillOpacity: 0.8
-            }).addTo(mainMap).bindTooltip("You are here");*/
-            
             // Use icon instead   
             const icon = L.divIcon({
                 html: '<i class="fas fa-location-arrow fa-2x" style="color: blue;"></i>',
@@ -872,12 +870,27 @@
 
 
             // Center the map initially
-            mainMap.setView([userLat, userLng], 15);
+            mainMap.setView([userLat, userLng], 16);
 
             // Start watching for live updates
             navigator.geolocation.watchPosition(function(position) {
                 const newLat = position.coords.latitude;
                 const newLng = position.coords.longitude;
+
+                 // Send to backend:
+                fetch('/update_browser_location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gps_location: `${userLat},${userLng}`
+                    })
+                }).then(res => {
+                    if (!res.ok) {
+                        console.error("Failed to send browser location");
+                    }
+                }).catch(err => {
+                    console.error("Error sending browser location:", err);
+                });
 
                 console.log("Location updated:", newLat, newLng);
                 showFlashMessage("Location updated:", newLat, newLng);
