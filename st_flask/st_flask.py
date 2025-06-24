@@ -19,7 +19,7 @@ current_gps_location = ""
 
 # Database configuration for remote connection
 #======================================================
-DB_CONFIG_FILE = '/home/guard3/st_flask/st_flask/db_config.ini'
+DB_CONFIG_FILE = '/home/guard3/st_flask/db_config.ini'
 
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
 GRID_FACTOR=10
@@ -646,4 +646,4 @@ def delete_trail(trail_id):
 
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
-    app.run(host='0.0.0.0', port=PORT)
+    app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
