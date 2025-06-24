@@ -68,6 +68,7 @@
         <div class="status-bar">
             <span id="scriptStatusMain">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
             <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
+            <span id="messageCounter">Received: <span id="messageCounterValue" class="badge">0</span></span>
         </div>
         <div id="mainMap" style="height: 400px; border-radius: 8px; margin-top: 20px;"></div>
     </div>
@@ -147,6 +148,7 @@
 
     <script>
 
+        let messageCounter = 0;//Number of messages with non-empty "senders" segment
         //Text for main header
         new Typed('#animatedHeader', {
             strings: ["Simbox Tracker"],
@@ -178,6 +180,8 @@
                 .then(response => response.json())
                 .then(data => {
                     updateStatusIndicators();
+                    messageCounter = 0;  // ✅ reset counter
+                    updateMessageCounterDisplay();
                 });
         });
 
@@ -232,6 +236,8 @@
                     .then(data => {
                         if (data.senders && Object.keys(data.senders).length > 0) {
                             updateModemStatus(data);
+                            messageCounter++;  // Increment number of non-empty messages
+                            updateMessageCounterDisplay();
                         } else {
                             console.log("Empty modem data; skipping modem update");
                         }
@@ -239,6 +245,15 @@
                     });
             }
         }
+
+        //Update number of non-empty messages
+        function updateMessageCounterDisplay() {
+            const counterValue = document.getElementById('messageCounterValue');
+            counterValue.textContent = messageCounter;
+            counterValue.className = 'badge ' + (messageCounter === 0 ? 'counter-zero' : 'counter-active');
+
+        }
+
 
         function showFileName(input) {
             const fileName = input.files[0]?.name || "Choose File";
@@ -477,6 +492,7 @@
             
             //Update if script is started or stopped
             updateStatusIndicators();
+            updateMessageCounterDisplay();
             
             // Tab switching logic
             const tabButtons = document.querySelectorAll('.tab-button');
@@ -838,12 +854,22 @@
             const userLat = position.coords.latitude;
             const userLng = position.coords.longitude;
 
-            // Create the initial marker
+            /* Create the initial marker
             userMarker = L.circleMarker([userLat, userLng], {
                 color: 'blue',
                 radius: 10,
                 fillOpacity: 0.8
-            }).addTo(mainMap).bindTooltip("You are here");
+            }).addTo(mainMap).bindTooltip("You are here");*/
+            
+            // Use icon instead   
+            const icon = L.divIcon({
+                html: '<i class="fas fa-location-arrow fa-2x" style="color: blue;"></i>',
+                className: '',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]  // center the icon on the point
+            });
+            userMarker = L.marker([userLat, userLng], { icon: icon }).addTo(mainMap).bindTooltip("You are here");
+
 
             // Center the map initially
             mainMap.setView([userLat, userLng], 15);

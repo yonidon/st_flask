@@ -8,6 +8,7 @@ import configparser
 import csv
 import io
 import math
+from threading import Thread
 
 app = Flask(__name__)
 app.secret_key = 'imsi'  
@@ -177,7 +178,7 @@ def init_db():
             pass
 
 #When json from simbox comes, insert to DB
-def insert_modem_data(modem_number, modem_data):
+def insert_modem_data(modem_number, modem_data,gps_location):
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
 
@@ -185,7 +186,7 @@ def insert_modem_data(modem_number, modem_data):
     readable_timestamp = convert_epoch_to_datetime(modem_data['ts'])
 
     #Parse gps coordinates from json for each sim
-    gps_string_from_modem = modem_data['survey_results']['gps_location'] 
+    gps_string_from_modem = gps_location
     try:
         latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
     except Exception:
@@ -415,7 +416,7 @@ def receive_json():
     # If in start mode, handle as before
     senders = data.get('senders', {})
     for modem_number, modem_data in senders.items():
-        insert_modem_data(modem_number, modem_data)
+        insert_modem_data(modem_number, modem_data,gps_location)
 
     return jsonify({"status": "start"}), 200
 
@@ -641,9 +642,12 @@ def delete_trail(trail_id):
 
 
 
-
-
-
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
     app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
+
+
+
+
+#How to create certificate:
+#openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 36500 -nodes

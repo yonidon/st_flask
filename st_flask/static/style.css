@@ -340,6 +340,16 @@ table tbody td {
     color: white !important;
 }
 
+.badge.counter-zero {
+    background-color: #6c757d;  /* gray */
+    color: white;
+}
+
+.badge.counter-active {
+    background-color: green;  /* green */
+    color: white;
+}
+
 
 /*Segment for import button*/
 .db-button-group {
