@@ -8,11 +8,22 @@ import configparser
 import csv
 import io
 import math
-from threading import Thread
+import random
 
 app = Flask(__name__)
 app.secret_key = 'imsi'  
 PORT=8999 #Port to run web server on
+
+#=======Bugs=======
+#update_avg_table creates overlapping squares. recalculate_grid works fine
+#Moving from tab to tab makes map empty until refresh
+#Need to add https that works on phone
+#Moving from tab to tab makes trail empty
+#Uncaught reference - loadGridLayer is not defined - probably because defined after functions run
+#"Update calls" - need to add option to upload a file
+#If importing and duplicate primary key then need to raise exception
+
+
 
 # Global state flag to indicate if script is running
 system_mode = 'stop'  # can be 'start' or 'stop'
@@ -26,7 +37,7 @@ DB_CONFIG_FILE = '/home/guard3/st_flask/db_config.ini'
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
 GRID_FACTOR=10
 GRID_SIZE_LAT = 0.00009*GRID_FACTOR
-GRID_SIZE_LON = 0.0001*GRID_FACTOR
+GRID_SIZE_LON = 0.0001 *GRID_FACTOR
 
 
 def load_db_config():
@@ -193,6 +204,7 @@ def insert_modem_data(modem_number, modem_data,gps_location):
     gps_string_from_modem = gps_location
     try:
         latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
+        latitude, longitude = jitter_coordinates(latitude, longitude) #Jitter coordinates so they don't overlap
     except Exception:
         print("Failed to get GPS")
         latitude, longitude, altitude = None, None, None
@@ -570,6 +582,8 @@ def clear_table():
     conn.close()
     return jsonify({'status': 'cleared'})
 
+#=================Statistics grid section==========================
+
 #Serve map grid layer
 @app.route('/map_grid_layer')
 def map_grid_layer():
@@ -598,7 +612,10 @@ def recalculate_grid():
     recalculate_grid_table()
     return jsonify({'status': 'recalculated'})
 
+#============================================================
 
+
+#=================Trail section=============================
 
 #Add trail to db
 @app.route('/save_trail', methods=['POST'])
@@ -624,8 +641,6 @@ def save_full_trail():
     return jsonify({'status': 'trail saved'})
 
 
-
-
 #Load trails from db
 @app.route('/get_trail')
 def get_all_trails():
@@ -649,6 +664,8 @@ def delete_trail(trail_id):
     conn.close()
     return jsonify({'status': 'deleted'})
 
+#============================================================
+
 #If browser got location then use it instead
 @app.route('/update_browser_location', methods=['POST'])
 def update_browser_location():
@@ -657,6 +674,11 @@ def update_browser_location():
     browser_gps_location = data.get("gps_location", "")
     return jsonify({"status": "received"}), 200
 
+def jitter_coordinates(lat, lon):
+    # Shift about +/- ~5 meters (depending on latitude scale)
+    delta_lat = random.uniform(-0.000005, 0.000005)
+    delta_lon = random.uniform(-0.000005, 0.000005)
+    return lat + delta_lat, lon + delta_lon
 
 
 if __name__ == '__main__':
