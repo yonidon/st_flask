@@ -471,12 +471,6 @@
         }
         
 
-        
-
-        
-
-
-
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
@@ -523,12 +517,21 @@
                     const tabId = button.dataset.tab;
                     activateTab(tabId);
                     localStorage.setItem('activeTab', tabId); // Save to storage
-                    // ✅ When activating map tab, force map resize
+
+                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
                         if (tabId === 'map-tab') {
                         setTimeout(() => {
                             map.invalidateSize();
                         }, 100);  // slight delay ensures panel is visible
                     }
+                    // For main tab too
+                        if (tabId === 'main-tab') {
+                        setTimeout(() => {
+                            mainMap.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+
+
 
                 });
             });
@@ -572,7 +575,7 @@
 
 
 
-
+            //=======Functions to add layers to map=====================
             function loadGridLayer() {
                 fetch('/map_grid_layer')
                 .then(res => res.json())
@@ -737,7 +740,7 @@
                     loadTrail();
                 });
             }
-
+            //================================================================
             
 
 

@@ -14,14 +14,17 @@ app = Flask(__name__)
 app.secret_key = 'imsi'  
 PORT=8999 #Port to run web server on
 
+#App will only work in firefox on phone
+
 #=======Bugs=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
-#Moving from tab to tab makes map empty until refresh
 #Need to add https that works on phone
-#Moving from tab to tab makes trail empty
-#Uncaught reference - loadGridLayer is not defined - probably because defined after functions run
+#Functions inside DOM are not accessible by functinos outside it
 #"Update calls" - need to add option to upload a file
 #If importing and duplicate primary key then need to raise exception
+#Add option to lock map
+#Remove map tile console errors
+#HTTPS stops working everywhere
 
 
 
@@ -684,6 +687,7 @@ def jitter_coordinates(lat, lon):
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
     app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
+    
 
 
 #How to create certificate:
