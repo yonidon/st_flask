@@ -14,7 +14,6 @@ app = Flask(__name__)
 app.secret_key = 'imsi'  
 PORT=8999 #Port to run web server on
 
-#App will only work in firefox on phone
 
 #=======Bugs=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
@@ -24,7 +23,13 @@ PORT=8999 #Port to run web server on
 #If importing and duplicate primary key then need to raise exception
 #Add option to lock map
 #Remove map tile console errors
-#HTTPS stops working everywhere
+#No exception handler for database not connected
+#Add option to read Alex survey status
+#Check if works after reboot
+#Add option to disable browser locaiton
+#In gps add indicator if browser locaiton or simbox location
+#Start will reset the counter, not stop
+
 
 
 
@@ -686,9 +691,10 @@ def jitter_coordinates(lat, lon):
 
 if __name__ == '__main__':
     init_db()  # Initialize the database when the app starts
-    app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
+
+    #No need to use this, https runs through nginx
+    #app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
+    app.run(host='0.0.0.0', port=8990)
     
-
-
 #How to create certificate:
 #openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 36500 -nodes

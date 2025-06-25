@@ -173,6 +173,8 @@
                 .then(response => response.json())
                 .then(data => {
                     updateStatusIndicators();
+                    messageCounter = 0;  // ✅ reset counter
+                    updateMessageCounterDisplay();
                 });
         });
 
@@ -182,8 +184,7 @@
                 .then(response => response.json())
                 .then(data => {
                     updateStatusIndicators();
-                    messageCounter = 0;  // ✅ reset counter
-                    updateMessageCounterDisplay();
+
                 });
         });
 
@@ -570,6 +571,7 @@
                 minZoom: 0,
                 maxZoom: 22,
                 tms: false,
+                errorTileUrl: '/static/tiles/fallback.png',
                 attribution: 'Created by QGIS'
             }).addTo(map);
 
@@ -850,7 +852,8 @@
         L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
             minZoom: 0,
             maxZoom: 22,
-            tms: false
+            tms: false,
+            errorTileUrl: '/static/tiles/fallback.png'
         }).addTo(mainMap);
 
         
@@ -1053,6 +1056,8 @@
             // Start fetchData interval
             fetchData(); // Call once immediately
             setInterval(fetchData, fetchDataInterval); // Call repeatedly every second
+
+            
         });    
         //updateCallResult();
         //setInterval(updateCallResult, updateCallResultInterval);
