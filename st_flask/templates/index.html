@@ -485,6 +485,29 @@
             li.textContent = message;
             flashContainer.appendChild(li);
         }
+
+
+        //Edit trail description. this is outside of DOM segment because popup is outside of function scope
+        function editDescription(trailId, lat, lon) {
+                const newDescription = prompt("Enter new description:");
+                if (newDescription !== null) {
+                    fetch('/update_trail_description', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            trail_id: trailId,
+                            lat: lat,
+                            lon: lon,
+                            description: newDescription
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(result => {
+                        alert("Description updated.");
+                        loadTrail(); // Reload to reflect changes
+                    });
+                }
+            }
         
 
 
@@ -690,13 +713,14 @@
                         if (!trails[item.TRAIL_ID]) {
                             trails[item.TRAIL_ID] = [];
                         }
-                        trails[item.TRAIL_ID].push([item.LATITUDE, item.LONGITUDE]);
+                        trails[item.TRAIL_ID].push(item);
                     });
 
                     for (const trailId in trails) {
-                        const latlngs = trails[trailId];
+                        const points = trails[trailId];
 
-                        // Draw the trail line
+                        const latlngs = points.map(trailPoint => [trailPoint.LATITUDE, trailPoint.LONGITUDE]);
+
                         const polyline = L.polyline(latlngs, {
                             color: 'black',
                             weight: 5,
@@ -704,12 +728,10 @@
                             dashArray: '10,6',
                             lineCap: 'round',
                             pane: 'trailMarkerPane'
-                        });
+                        }).addTo(trailLayerGroup);
 
-                        polyline.addTo(trailLayerGroup);
-
-                        // Add numbered markers for each point
-                        latlngs.forEach((latlng, index) => {
+                        points.forEach((trailPoint, index) => {
+                            const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
                             const number = index + 1;
 
                             const icon = L.divIcon({
@@ -734,10 +756,22 @@
                                 iconAnchor: [12, 12]
                             });
 
-                            L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroup);
+                            const marker = L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroup);
+
+                            let description = trailPoint.DESCRIPTION || "Unknown location";
+
+                            marker.bindPopup(`
+                            <div class="popup-content">
+                                <div class="popup-header">
+                                    <b>Location</b>
+                                    <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
+                                </div>
+                                <div class="popup-description">${description}</div>
+                            </div>
+                        `, { className: 'custom-popup' });
+
+                        
                         });
-
-
 
                         polyline.on('click', function() {
                             if (confirm(`Delete trail ID ${trailId}?`)) {
@@ -745,6 +779,7 @@
                             }
                         });
                     }
+
 
                 });
             }
@@ -757,6 +792,9 @@
                     loadTrail();
                 });
             }
+
+            
+
             //================================================================
             
 

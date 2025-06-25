@@ -186,6 +186,7 @@ def init_db():
                 LATITUDE DECIMAL(13, 5),
                 LONGITUDE DECIMAL(13, 5),
                 ALTITUDE DECIMAL(6, 1),
+                DESCRIPTION VARCHAR(255),
                 TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -656,7 +657,7 @@ def save_full_trail():
 def get_all_trails():
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT TRAIL_ID, LATITUDE, LONGITUDE FROM TBL_ST_SIMBOX_TRAIL ORDER BY TRAIL_ID, ID')
+    cursor.execute('SELECT TRAIL_ID, LATITUDE, LONGITUDE,DESCRIPTION  FROM TBL_ST_SIMBOX_TRAIL ORDER BY TRAIL_ID, ID')
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -673,6 +674,35 @@ def delete_trail(trail_id):
     cursor.close()
     conn.close()
     return jsonify({'status': 'deleted'})
+
+
+@app.route('/update_trail_description', methods=['POST'])
+def update_trail_description():
+    data = request.json
+    trail_id = data.get('trail_id')
+    lat = data.get('lat')
+    lon = data.get('lon')
+    description = data.get('description')
+
+
+
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE TBL_ST_SIMBOX_TRAIL
+            SET DESCRIPTION=%s
+            WHERE TRAIL_ID=%s AND LATITUDE=%s AND LONGITUDE=%s
+        """, (description, trail_id, lat, lon))
+        conn.commit()
+        return jsonify({"status": "updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 
 #============================================================
 
