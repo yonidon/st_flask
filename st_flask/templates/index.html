@@ -70,7 +70,9 @@
         <div class="status-bar">
             <span id="scriptStatusMain">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
             <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
+            <span id="surveyStatus">Status: <span id="surveyStatusValue" class="badge">Unknown</span></span>
             <span id="messageCounter">Received: <span id="messageCounterValue" class="badge">0</span></span>
+
         </div>
         <div id="mainMap" style="height: 400px; border-radius: 8px; margin-top: 20px;"></div>
     </div>
@@ -401,6 +403,19 @@
                     } else {
                         gpsValue.textContent = 'Down';
                         gpsValue.className = 'badge gps-down';
+                    }
+
+                    //Status of backend service
+                    const surveyValue = document.getElementById('surveyStatusValue');
+                    if (data.survey_running === true) {
+                        surveyValue.textContent = 'Running';
+                        surveyValue.className = 'badge survey-running';
+                    } else if (data.survey_running === false) {
+                        surveyValue.textContent = 'Stopped';
+                        surveyValue.className = 'badge survey-stopped';
+                    } else {
+                        surveyValue.textContent = 'Unknown';
+                        surveyValue.className = 'badge survey-unknown';
                     }
                 });
             // Update refresh status locally

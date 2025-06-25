@@ -350,6 +350,19 @@ table tbody td {
     color: white;
 }
 
+.badge.survey-running {
+    background-color: green; /* green */
+    color: white;
+}
+
+.badge.survey-stopped {
+    background-color: #dc3545; /* red */
+    color: white;
+}
+.badge.survey-unknown {
+    background-color: #6c757d; /* red */
+    color: white;
+}
 
 /*Segment for import button*/
 .db-button-group {

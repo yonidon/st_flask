@@ -24,11 +24,11 @@ PORT=8999 #Port to run web server on
 #Add option to lock map
 #Remove map tile console errors
 #No exception handler for database not connected
-#Add option to read Alex survey status
 #Check if works after reboot
 #Add option to disable browser locaiton
 #In gps add indicator if browser locaiton or simbox location
-#Start will reset the counter, not stop
+#Option for trail point deatils tooltip, option to choose current point. in tooltip button to select coordinate.
+#In tooltip edit button for description, label is location
 
 
 
@@ -37,6 +37,7 @@ PORT=8999 #Port to run web server on
 system_mode = 'stop'  # can be 'start' or 'stop'
 current_gps_location = ''   # from backend modem JSON requests
 browser_gps_location = ''  # from browser geolocation updates
+current_survey_running = ''
 
 # Database configuration for remote connection
 #======================================================
@@ -423,12 +424,13 @@ def recalculate_grid_table():
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data, system_mode, current_gps_location, browser_gps_location
+    global latest_json_data, system_mode, current_gps_location, browser_gps_location, current_survey_running
     data = request.json
     latest_json_data = data  # update global json
 
     #Update global gps lock status
     gps_location = data.get("gps_location", "")
+    current_survey_running = data.get("survey_running", False)
    
     if gps_location and gps_location.strip() != "":
         current_gps_location = gps_location  # only update when non-empty
@@ -438,7 +440,6 @@ def receive_json():
     if system_mode == 'stop':
         # Just acknowledge stop mode, discard incoming data
         return jsonify({"status": "stop"}), 200
-    print(f"GPS: {current_gps_location}")
     # If in start mode, handle as before
     senders = data.get('senders', {})
     for modem_number, modem_data in senders.items():
@@ -492,12 +493,13 @@ def stop_script():
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
 
-    global current_gps_location, browser_gps_location
+    global current_gps_location, browser_gps_location, current_survey_running 
     effective_gps_location = current_gps_location or browser_gps_location or ""
 
     return jsonify({
         "mode": system_mode,
-        "gps_location": effective_gps_location
+        "gps_location": effective_gps_location,
+        "survey_running": current_survey_running
     })
 
 
