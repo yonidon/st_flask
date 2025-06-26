@@ -1,14 +1,13 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, make_response, flash
-import subprocess
+from flask import Flask, request, jsonify, render_template, redirect, make_response, flash
 import mysql.connector
 from datetime import datetime
-import time
 import os
 import configparser
 import csv
 import io
 import math
 import random
+import json
 
 app = Flask(__name__)
 app.secret_key = 'imsi'  
@@ -28,7 +27,19 @@ PORT=8999 #Port to run web server on
 #Add option to disable browser locaiton
 #In gps add indicator if browser locaiton or simbox location
 #Add labels for main map
-#Add option to save marking of the trail
+#Start transmission and stop remotely (future feature)
+#Layer for calls and layer not for calls
+#Only one point can be marked
+#Changed received to steps, switch to percents 
+#Simple/Advanced mode - to hide tabs
+#Merge start and stop button
+#Add option to stop automatically after x calls
+#Turn point to green after done , can mark again (with blue border)
+#Add rssi layer to map
+#Add operator to tooltip of points instead of MCC/MNC
+#Alex - add call attempts , maybe CALL_RESULT will be a counter instead?
+#If no gps then gps of trail point be selected
+#Fix markers overlapping
 
 
 
@@ -221,6 +232,23 @@ def insert_modem_data(modem_number, modem_data,gps_location):
         latitude, longitude, altitude = None, None, None
 
 
+    # Normalize call_result values to only "OK" or "FAIL"
+    call_results = modem_data['survey_results'].get('call_result', [])
+    normalized_results = []
+
+    for result in call_results:
+        if isinstance(result, str):
+            result_lower = result.lower()
+            if result_lower.startswith('ok'):
+                normalized_results.append('OK')
+            elif result_lower.startswith('failed'):
+                normalized_results.append('FAIL')
+
+    # Replace with normalized array
+    modem_data['survey_results']['call_result'] = normalized_results
+
+
+
     cursor.execute('''
         INSERT INTO TBL_ST_SIMBOX_EVENTS (
             MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, MSISDN, SENT, MODEM_INDEX_I2C,
@@ -240,7 +268,7 @@ def insert_modem_data(modem_number, modem_data,gps_location):
         modem_data['survey_results']['mcc'], modem_data['survey_results']['mnc'],
         modem_data['survey_results']['lac'], modem_data['survey_results']['cell_id'],
         modem_data['survey_results']['rssi'], modem_data['survey_results']['snr'],
-        modem_data['survey_results']['call_result'], modem_data['survey_results']['sms_result'],
+        json.dumps(modem_data['survey_results']['call_result']), modem_data['survey_results']['sms_result'],
         latitude, 
         longitude, 
         altitude 
@@ -271,25 +299,58 @@ def insert_modem_data(modem_number, modem_data,gps_location):
 def update_call_result():
     try:
         conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+
+        query = """
+            SELECT e.ID, e.CALL_RESULT
+            FROM TBL_ST_SIMBOX_EVENTS e
+            JOIN TBL_ST_SIMBOX_CALLS c 
+            ON e.MODEM_MSISDN = c.MSISDN
+            WHERE ABS(TIMESTAMPDIFF(SECOND, e.TIMESTAMP, c.EVENT_TIME)) <= 10
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        updated = 0
+
+        for row in rows:
+            try:
+                result_list = json.loads(row['CALL_RESULT'])
+                if not isinstance(result_list, list) or not result_list:
+                    continue
+
+                for i, val in enumerate(result_list):
+                    if val.upper() != "OK":
+                        result_list[i] = "OK"
+                        updated_result = json.dumps(result_list)
+                        cursor.execute("""
+                            UPDATE TBL_ST_SIMBOX_EVENTS
+                            SET CALL_RESULT = %s
+                            WHERE ID = %s
+                        """, (updated_result, row['ID']))
+                        updated += 1
+                        break  # Only replace the first non-OK
+
+            except Exception as err:
+                print(f"Skipping ID {row['ID']}: {err}")
+
+        conn.commit()
+        print(f"Updated {updated} CALL_RESULT arrays with one OK replacement.")
+
+    except mysql.connector.Error as err:
+        print(f"DB Error: {err}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+#Delete this
+def update_call_result_old():
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor()
 
-        #There was LIMIT 16 when selecting from TBL_ST_SIMBOX_EVENTS, to make it less heavy. We thought that it would run in real time
-        #ABS was 120, but that doesn't always work because clocks are not always synchronized. 180 should work.
-        update_query_light= """
-            UPDATE TBL_ST_SIMBOX_EVENTS e
-            JOIN (
-                SELECT * FROM TBL_ST_SIMBOX_EVENTS ORDER BY TIMESTAMP DESC
-            ) latest_events
-            ON e.ID = latest_events.ID
-            JOIN (
-                SELECT * FROM TBL_ST_SIMBOX_CALLS ORDER BY EVENT_TIME DESC
-            ) latest_calls
-            ON latest_events.MODEM_MSISDN = latest_calls.MSISDN
-            SET e.CALL_RESULT = 'OK'
-            WHERE ABS(TIMESTAMPDIFF(SECOND, latest_events.TIMESTAMP, latest_calls.EVENT_TIME)) <= 180
-        """
-
-        #This query is between full tables, not optimal. Maybe should use this one because it works.
+        #This query is between full tables, not optimal.
         update_query = """
             UPDATE TBL_ST_SIMBOX_EVENTS e
             JOIN TBL_ST_SIMBOX_CALLS c 
@@ -317,6 +378,10 @@ def update_avg_table(lat, lon, call_result):
     lon_min = math.floor(lon / GRID_SIZE_LON) * GRID_SIZE_LON
     lon_max = lon_min + GRID_SIZE_LON
 
+    ok_count = sum(1 for res in call_result if res == 'OK')
+    fail_count = len(call_result) - ok_count
+    total_points = len(call_result)
+
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
 
@@ -329,28 +394,19 @@ def update_avg_table(lat, lon, call_result):
 
     if row:
         id = row[0]
-        if call_result == 'OK':
-            cursor.execute('''
-                UPDATE TBL_ST_SIMBOX_AVG
-                SET TOTAL_POINTS = TOTAL_POINTS + 1,
-                    OK_COUNT = OK_COUNT + 1
-                WHERE ID = %s
-            ''', (id,))
-        else:
-            cursor.execute('''
-                UPDATE TBL_ST_SIMBOX_AVG
-                SET TOTAL_POINTS = TOTAL_POINTS + 1,
-                    FAIL_COUNT = FAIL_COUNT + 1
-                WHERE ID = %s
-            ''', (id,))
+        cursor.execute('''
+            UPDATE TBL_ST_SIMBOX_AVG
+            SET TOTAL_POINTS = TOTAL_POINTS + %s,
+                OK_COUNT = OK_COUNT + %s,
+                FAIL_COUNT = FAIL_COUNT + %s
+            WHERE ID = %s
+        ''', (total_points, ok_count, fail_count, id))
     else:
-        ok_count = 1 if call_result == 'OK' else 0
-        fail_count = 0 if call_result == 'OK' else 1
         cursor.execute('''
             INSERT INTO TBL_ST_SIMBOX_AVG
             (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, TOTAL_POINTS, OK_COUNT, FAIL_COUNT)
-            VALUES (%s, %s, %s, %s, 1, %s, %s)
-        ''', (lat_min, lat_max, lon_min, lon_max, ok_count, fail_count))
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (lat_min, lat_max, lon_min, lon_max, total_points, ok_count, fail_count))
 
     conn.commit()
     cursor.close()
@@ -359,26 +415,35 @@ def update_avg_table(lat, lon, call_result):
 
 #Recalculate grid table
 def recalculate_grid_table():
-    # Load current grid size dynamically
-    lat_size, lon_size = GRID_SIZE_LAT ,GRID_SIZE_LON
+    lat_size, lon_size = GRID_SIZE_LAT, GRID_SIZE_LON
 
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor(dictionary=True)
 
-    # Start fresh
     cursor.execute('DELETE FROM TBL_ST_SIMBOX_AVG')
     conn.commit()
 
-    # Fetch all data from events table
+    # Read events
     cursor.execute('SELECT LATITUDE, LONGITUDE, CALL_RESULT FROM TBL_ST_SIMBOX_EVENTS WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL')
     rows = cursor.fetchall()
 
-    grid = {}  # in-memory aggregation
+    grid = {}
 
     for row in rows:
         lat = float(row['LATITUDE'])
         lon = float(row['LONGITUDE'])
-        call_result = row['CALL_RESULT']
+
+        try:
+            call_results = json.loads(row['CALL_RESULT'])  # safely parse JSON string
+        except (json.JSONDecodeError, TypeError):
+            continue  # skip invalid data
+
+        if not isinstance(call_results, list):
+            continue
+
+        ok_count = sum(1 for res in call_results if res == 'OK')
+        fail_count = len(call_results) - ok_count
+        total = len(call_results)
 
         lat_min = math.floor(lat / lat_size) * lat_size
         lat_max = lat_min + lat_size
@@ -398,13 +463,11 @@ def recalculate_grid_table():
                 'FAIL_COUNT': 0
             }
 
-        grid[key]['TOTAL_POINTS'] += 1
-        if call_result == 'OK':
-            grid[key]['OK_COUNT'] += 1
-        else:
-            grid[key]['FAIL_COUNT'] += 1
+        grid[key]['TOTAL_POINTS'] += total
+        grid[key]['OK_COUNT'] += ok_count
+        grid[key]['FAIL_COUNT'] += fail_count
 
-    # Insert into AVG table
+    # Insert updated grid
     insert_query = '''
         INSERT INTO TBL_ST_SIMBOX_AVG (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, TOTAL_POINTS, OK_COUNT, FAIL_COUNT)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
@@ -412,14 +475,14 @@ def recalculate_grid_table():
 
     for square in grid.values():
         cursor.execute(insert_query, (
-            square['LAT_MIN'], square['LAT_MAX'], square['LON_MIN'], square['LON_MAX'],
+            square['LAT_MIN'], square['LAT_MAX'],
+            square['LON_MIN'], square['LON_MAX'],
             square['TOTAL_POINTS'], square['OK_COUNT'], square['FAIL_COUNT']
         ))
 
     conn.commit()
     cursor.close()
     conn.close()
-
 
 
 
@@ -438,15 +501,16 @@ def receive_json():
         current_gps_location = gps_location  # only update when non-empty
     else:
         current_gps_location = browser_gps_location
+    
+    senders = data.get('senders', {})
+    if senders:    
+        for modem_number, modem_data in senders.items():
+            insert_modem_data(modem_number, modem_data,current_gps_location)    
 
     if system_mode == 'stop':
-        # Just acknowledge stop mode, discard incoming data
+        # Acknowledge stop mode
         return jsonify({"status": "stop"}), 200
-    # If in start mode, handle as before
-    senders = data.get('senders', {})
-    for modem_number, modem_data in senders.items():
-        insert_modem_data(modem_number, modem_data,current_gps_location)
-
+    # Acknowledge start mode
     return jsonify({"status": "start"}), 200
 
 

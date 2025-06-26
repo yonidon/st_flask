@@ -1,5 +1,11 @@
 sudo apt-get install mariadb-server
 
+to install offline:
+apt download mariadb-server
+apt download libpam-modules-bin
+apt download debconf libperl5.34
+apt download $(apt-rdepends mariadb-server | grep -v "^ " | grep -v "debconf-2.0" | grep -v "perlapi-5.34.0")
+
 nano /etc/mysql/my.cnf
 add this to file : 
 
@@ -7,7 +13,7 @@ add this to file :
 skip-networking=0
 skip-bind-address
 
-sudo service restart mysql
+sudo systemctl restart mysql
 
 sudo  mysql -u root
 create database sgb;

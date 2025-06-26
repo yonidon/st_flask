@@ -15,7 +15,7 @@ def generate_modem(modem_number):
     alt = round(random.uniform(40.0, 50.0), 1)
 
     #call_result = random.choice(["OK", "failed_timeout", "failed_atd", ""])
-    call_result = random.choice(["OK", "failed_timeout"])
+    call_result = random.choice([["failed_timeout", "failed_timeout"],["OK", "failed_timeout"],["OK", "OK"],["OK","failed_timeout", "failed_timeout"]])
 
     modem = {
         "status": "IDLE",
@@ -54,10 +54,14 @@ def generate_modem(modem_number):
     }
     return modem
 
+lat = round(random.uniform(LAT_MIN, LAT_MAX), 6)
+lon = round(random.uniform(LON_MIN, LON_MAX), 6)
+alt = round(random.uniform(40.0, 50.0), 1)
+
 # Build full payload
 payload = {
     "simbox_name": "PC",
-    "gps_location": "32.5255,34.2442,43.1",
+    "gps_location": f"{lat},{lon},{alt}",
     "psms_name": "PSMS",
     "status": "IDLE",
     "senders": {str(i): generate_modem(i) for i in range(1, 17)}

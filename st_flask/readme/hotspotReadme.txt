@@ -28,6 +28,12 @@ sudo netplan apply
 sudo apt update
 sudo apt install hostapd dnsmasq
 
+can install offline:
+apt download dnsmasq
+apt download dnsmasq-base
+apt download hostapd
+then move to machine and sudo dpkg -i package_name
+
 sudo systemctl disable hostapd
 sudo systemctl disable dnsmasq
 
@@ -65,6 +71,7 @@ add this:
 interface=wlp1s0
 dhcp-range=192.168.50.10,192.168.50.100,12h
 bind-dynamic
+no-resolv
 
 7.Enable services
 sudo systemctl unmask hostapd

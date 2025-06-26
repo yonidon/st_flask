@@ -7,6 +7,14 @@ if __name__ == '__main__':
 In linux:
 sudo apt update
 sudo apt install nginx
+
+offline install:
+apt download nginx
+apt download debconf
+apt download perl-base
+apt download perl
+apt download $(apt-rdepends nginx-full | grep -v "^ " | grep -v "debconf-2.0")
+
 mkdir ~/st_flask/certs
 cd ~/st_flask/certs
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 -nodes

@@ -630,11 +630,11 @@
                         const ok = square.OK_COUNT;
                         const fail = square.FAIL_COUNT;
 
-                        const ratio = total > 0 ? ok / total : 0;
-                        let color = 'gray';
-                        if (ratio >= 0.9) color = 'green';
-                        else if (ratio >= 0.5) color = 'yellow';
-                        else color = 'red';
+                        const failRatio = (square.TOTAL_POINTS - square.OK_COUNT) / square.TOTAL_POINTS;
+
+                        const color = (failRatio > 0.9) ? 'red' :
+                                      (failRatio > 0.5) ? 'yellow' : 'green';
+
 
                         const bounds = [
                             [latMin, lonMin],
@@ -669,7 +669,25 @@
                         data.forEach(item => {
                             if (!item.LATITUDE || !item.LONGITUDE) return;
 
-                            const color = (item.CALL_RESULT === 'OK') ? 'green' : 'red';
+                            let color = 'gray';  // fallback
+
+                            try {
+                                const results = JSON.parse(item.CALL_RESULT || '[]');
+                                const total = results.length;
+                                const failed = results.filter(r => r.toLowerCase() !== 'ok').length;
+                                const failRatio = total > 0 ? failed / total : 0;
+
+                                if (failRatio > 0.9) {
+                                    color = 'red';
+                                } else if (failRatio > 0.5) {
+                                    color = 'yellow';
+                                } else {
+                                    color = 'green';
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse CALL_RESULT:', item.CALL_RESULT);
+                            }
+
 
                             const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
                                 color: color,
@@ -678,11 +696,24 @@
                                 pane: 'markerPane'
                             }).addTo(markersLayerGroup);
 
+                            // Compute call result ratio
+                            let callResultText = 'N/A';
+                            try {
+                                const results = JSON.parse(item.CALL_RESULT || '[]');
+                                const total = results.length;
+                                const okCount = results.filter(r => r.toLowerCase() === 'ok').length;
+                                const successRate = total > 0 ? (okCount / total) * 100 : 0;
+
+                                callResultText = `${okCount} OK / ${total} total → ${successRate.toFixed(1)}%`;
+                            } catch (e) {
+                                console.warn("Invalid CALL_RESULT format", item.CALL_RESULT);
+                            }
+
                             marker.bindTooltip(`
                                 <strong>ARFCN:</strong> ${item.ARFCN || 'N/A'}<br>
                                 <strong>PCI:</strong> ${item.PCI || 'N/A'}<br>
                                 <strong>TIMESTAMP:</strong> ${item.TIMESTAMP || 'N/A'}<br>
-                                <strong>Call Result:</strong> ${item.CALL_RESULT|| 'N/A'}
+                                <strong>Call Result:</strong> ${callResultText}
                             `, { direction: 'top', offset: [0, -5] });
 
                             // Full popup on click
