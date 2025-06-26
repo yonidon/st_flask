@@ -27,8 +27,8 @@ PORT=8999 #Port to run web server on
 #Check if works after reboot
 #Add option to disable browser locaiton
 #In gps add indicator if browser locaiton or simbox location
-#Option for trail point deatils tooltip, option to choose current point. in tooltip button to select coordinate.
-#In tooltip edit button for description, label is location
+#Add labels for main map
+#Add option to save marking of the trail
 
 
 
@@ -187,6 +187,7 @@ def init_db():
                 LONGITUDE DECIMAL(13, 5),
                 ALTITUDE DECIMAL(6, 1),
                 DESCRIPTION VARCHAR(255),
+                IS_MARKED BOOLEAN DEFAULT FALSE,
                 TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -653,15 +654,20 @@ def save_full_trail():
 
 
 #Load trails from db
-@app.route('/get_trail')
-def get_all_trails():
-    conn = mysql.connector.connect(**DATABASE_CONFIG)
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT TRAIL_ID, LATITUDE, LONGITUDE,DESCRIPTION  FROM TBL_ST_SIMBOX_TRAIL ORDER BY TRAIL_ID, ID')
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return jsonify(rows)
+@app.route('/get_trail', methods=['GET'])
+def get_trail():
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT TRAIL_ID, LATITUDE, LONGITUDE, ALTITUDE, DESCRIPTION, IS_MARKED FROM TBL_ST_SIMBOX_TRAIL')
+        rows = cursor.fetchall()
+        return jsonify(rows)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 #Delete trail with trail trail_id from db
@@ -702,6 +708,27 @@ def update_trail_description():
         cursor.close()
         conn.close()
 
+@app.route('/update_marker_status', methods=['POST'])
+def update_marker_status():
+    data = request.json
+    trail_id = data['trail_id']
+    is_marked = data['is_marked']
+    
+    try:
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE TBL_ST_SIMBOX_TRAIL
+            SET IS_MARKED=%s
+            WHERE TRAIL_ID=%s
+        """, (is_marked, trail_id))
+        conn.commit()
+        return jsonify({"status": "updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
 
 
 #============================================================

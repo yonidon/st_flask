@@ -800,7 +800,7 @@
 
 
 
-
+            map.doubleClickZoom.disable();
             map.on('dblclick', function (e) {
                 const lat = e.latlng.lat.toFixed(5);
                 const lng = e.latlng.lng.toFixed(5);
@@ -970,7 +970,8 @@
             showFlashMessage("Unable to get initial location: " + error.message);
         });
 
-
+        mainMap.doubleClickZoom.disable();
+        /*
         mainMap.on('dblclick', function (e) {
                 const lat = e.latlng.lat.toFixed(5);
                 const lng = e.latlng.lng.toFixed(5);
@@ -982,7 +983,7 @@
                     alert("Default map view saved!");
                 }
             });
-
+        */
         const drawnItemsMain = new L.FeatureGroup().addTo(mainMap);
         const drawControlMain = new L.Control.Draw({
             edit: { featureGroup: drawnItemsMain },
@@ -1019,72 +1020,122 @@
         });
 
         function loadMainMapTrail() {
-            fetch('/get_trail')
-            .then(res => res.json())
-            .then(data => {
-                trailLayerGroupMain.clearLayers();
+                fetch('/get_trail')
+                .then(res => res.json())
+                .then(data => {
+                    trailLayerGroupMain.clearLayers();
 
-                const trails = {};
+                    const trails = {};
 
-                data.forEach(item => {
-                    if (!trails[item.TRAIL_ID]) {
-                        trails[item.TRAIL_ID] = [];
-                    }
-                    trails[item.TRAIL_ID].push([item.LATITUDE, item.LONGITUDE]);
-                });
+                    data.forEach(item => {
+                        if (!trails[item.TRAIL_ID]) {
+                            trails[item.TRAIL_ID] = [];
+                        }
+                        trails[item.TRAIL_ID].push(item);
+                    });
 
-                for (const trailId in trails) {
-                    const latlngs = trails[trailId];
+                    for (const trailId in trails) {
+                        const points = trails[trailId];
 
-                    // Draw polyline only for mainMap (no click handlers here)
-                    const polyline = L.polyline(latlngs, {
-                        color: 'black',
-                        weight: 5,
-                        opacity: 1.0,
-                        dashArray: '10,6',
-                        lineCap: 'round',
-                        pane: 'trailMarkerPane'
-                    }).addTo(trailLayerGroupMain);
+                        const latlngs = points.map(trailPoint => [trailPoint.LATITUDE, trailPoint.LONGITUDE]);
 
-                    // Add numbered markers for each point
-                    latlngs.forEach((latlng, index) => {
-                        const number = index + 1;
+                        const polyline = L.polyline(latlngs, {
+                            color: 'black',
+                            weight: 5,
+                            opacity: 1.0,
+                            dashArray: '10,6',
+                            lineCap: 'round',
+                            pane: 'trailMarkerPane'
+                        }).addTo(trailLayerGroupMain);
 
-                        const icon = L.divIcon({
-                            html: `
-                                <div style="
-                                    width: 24px;
-                                    height: 24px;
-                                    background-color: white;
-                                    border: 2px solid black;
-                                    border-radius: 4px;
-                                    text-align: center;
-                                    line-height: 24px;
-                                    font-weight: bold;
-                                    font-size: 14px;
-                                    color: black;
-                                ">
-                                    ${number}
+                        points.forEach((trailPoint, index) => {
+                            const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
+                            const number = index + 1;
+
+                            const icon = L.divIcon({
+                                html: `
+                                    <div style="
+                                        width: 24px;
+                                        height: 24px;
+                                        background-color: white;
+                                        border: 2px solid black;
+                                        border-radius: 4px;
+                                        text-align: center;
+                                        line-height: 24px;
+                                        font-weight: bold;
+                                        font-size: 14px;
+                                        color: black;
+                                    ">
+                                        ${number}
+                                    </div>
+                                `,
+                                className: '',
+                                iconSize: [24, 24],
+                                iconAnchor: [12, 12]
+                            });
+
+                            const marker = L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroupMain);
+
+                            marker.isSelected = false;
+
+                            marker.on('dblclick', function() {
+                                this.isSelected = !this.isSelected;
+
+                                if (this.isSelected) {
+                                    this.setIcon(L.divIcon({
+                                        html: `
+                                            <div style="
+                                                width: 24px;
+                                                height: 24px;
+                                                background-color: blue;
+                                                border: 2px solid black;
+                                                border-radius: 4px;
+                                                text-align: center;
+                                                line-height: 24px;
+                                                font-weight: bold;
+                                                font-size: 14px;
+                                                color: white;
+                                            ">
+                                                ${number}
+                                            </div>
+                                        `,
+                                        className: '',
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12]
+                                    }));
+                                } else {
+                                    this.setIcon(icon);  // Reset to original icon
+                                }
+                            });
+
+                            let description = trailPoint.DESCRIPTION || "Unknown location";
+
+                            marker.bindPopup(`
+                            <div class="popup-content">
+                                <div class="popup-header">
+                                    <b>Location</b>
+                                    <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
                                 </div>
-                            `,
-                            className: '',
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
+                                <div class="popup-description">${description}</div>
+                            </div>
+                        `, { className: 'custom-popup' });
+
+                        
+                        });
+
+                        polyline.on('click', function() {
+                            if (confirm(`Delete trail ID ${trailId}?`)) {
+                                deleteMainMapTrail(trailId);
+                            }
                         });
 
                         
 
-                        L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroupMain);
-                    });
+                    }
 
-                    polyline.on('click', function() {
-                            if (confirm(`Delete trail ID ${trailId}?`)) {
-                                deleteMainMapTrail(trailId);
-                            }
-                    });
-                }
-            });
-        }
+
+                });
+            }
         function deleteMainMapTrail(trailId) {
                 fetch(`/delete_trail/${trailId}`, { method: 'POST' })
                 .then(res => res.json())
