@@ -24,20 +24,17 @@ PORT=8999 #Port to run web server on
 #Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
-#Add option to disable browser locaiton
 #In gps add indicator if browser locaiton or simbox location
-#Add labels for main map
 #Start transmission and stop remotely (future feature)
-#Layer for calls and layer not for calls
+#Layer for active transmission and inactive
 #Only one point can be marked
-#Changed received to steps, switch to percents 
 #Simple/Advanced mode - to hide tabs
 #Merge start and stop button
-#Add option to stop automatically after x calls
+#Add option to stop automatically after x surveys (maybe field with survey counter)
+#Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Add rssi layer to map
 #Add operator to tooltip of points instead of MCC/MNC
-#Alex - add call attempts , maybe CALL_RESULT will be a counter instead?
 #If no gps then gps of trail point be selected
 #Fix markers overlapping
 
