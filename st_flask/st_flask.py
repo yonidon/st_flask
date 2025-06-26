@@ -712,6 +712,8 @@ def update_trail_description():
 def update_marker_status():
     data = request.json
     trail_id = data['trail_id']
+    lat = data['lat']
+    lon = data['lon']
     is_marked = data['is_marked']
     
     try:
@@ -720,8 +722,8 @@ def update_marker_status():
         cursor.execute("""
             UPDATE TBL_ST_SIMBOX_TRAIL
             SET IS_MARKED=%s
-            WHERE TRAIL_ID=%s
-        """, (is_marked, trail_id))
+            WHERE TRAIL_ID=%s AND LATITUDE=%s AND LONGITUDE=%s
+        """, (is_marked, trail_id, lat, lon))
         conn.commit()
         return jsonify({"status": "updated"}), 200
     except Exception as e:

@@ -734,29 +734,34 @@
                             const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
                             const number = index + 1;
 
-                            const icon = L.divIcon({
-                                html: `
-                                    <div style="
-                                        width: 24px;
-                                        height: 24px;
-                                        background-color: white;
-                                        border: 2px solid black;
-                                        border-radius: 4px;
-                                        text-align: center;
-                                        line-height: 24px;
-                                        font-weight: bold;
-                                        font-size: 14px;
-                                        color: black;
-                                    ">
-                                        ${number}
-                                    </div>
-                                `,
+                            const iconHtml = (number, marked) => `
+                                <div style="
+                                    width: 24px;
+                                    height: 24px;
+                                    background-color: ${marked ? 'blue' : 'white'};
+                                    border: 2px solid black;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    line-height: 24px;
+                                    font-weight: bold;
+                                    font-size: 14px;
+                                    color: ${marked ? 'white' : 'black'};
+                                ">
+                                    ${number}
+                                </div>
+                            `;
+
+                            const marker = L.marker(latlng, {
+                            icon: L.divIcon({
+                                html: iconHtml(number, trailPoint.IS_MARKED),
                                 className: '',
                                 iconSize: [24, 24],
                                 iconAnchor: [12, 12]
-                            });
+                            }),
+                            pane: 'trailPane'
+                            }).addTo(trailLayerGroup);
 
-                            const marker = L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroup);
+                            marker.isSelected = trailPoint.IS_MARKED;
 
                             let description = trailPoint.DESCRIPTION || "Unknown location";
 
@@ -1052,61 +1057,57 @@
                             const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
                             const number = index + 1;
 
-                            const icon = L.divIcon({
-                                html: `
-                                    <div style="
-                                        width: 24px;
-                                        height: 24px;
-                                        background-color: white;
-                                        border: 2px solid black;
-                                        border-radius: 4px;
-                                        text-align: center;
-                                        line-height: 24px;
-                                        font-weight: bold;
-                                        font-size: 14px;
-                                        color: black;
-                                    ">
-                                        ${number}
-                                    </div>
-                                `,
+                            const iconHtml = (number, marked) => `
+                                <div style="
+                                    width: 24px;
+                                    height: 24px;
+                                    background-color: ${marked ? 'blue' : 'white'};
+                                    border: 2px solid black;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    line-height: 24px;
+                                    font-weight: bold;
+                                    font-size: 14px;
+                                    color: ${marked ? 'white' : 'black'};
+                                ">
+                                    ${number}
+                                </div>
+                            `;
+
+                            const marker = L.marker(latlng, {
+                            icon: L.divIcon({
+                                html: iconHtml(number, trailPoint.IS_MARKED),
                                 className: '',
                                 iconSize: [24, 24],
                                 iconAnchor: [12, 12]
-                            });
+                            }),
+                            pane: 'trailPane'
+                            }).addTo(trailLayerGroupMain);
 
-                            const marker = L.marker(latlng, { icon: icon, pane: 'trailPane' }).addTo(trailLayerGroupMain);
+                            marker.isSelected = trailPoint.IS_MARKED;
 
-                            marker.isSelected = false;
-
-                            marker.on('dblclick', function() {
+                            marker.on('dblclick', function () {
                                 this.isSelected = !this.isSelected;
 
-                                if (this.isSelected) {
-                                    this.setIcon(L.divIcon({
-                                        html: `
-                                            <div style="
-                                                width: 24px;
-                                                height: 24px;
-                                                background-color: blue;
-                                                border: 2px solid black;
-                                                border-radius: 4px;
-                                                text-align: center;
-                                                line-height: 24px;
-                                                font-weight: bold;
-                                                font-size: 14px;
-                                                color: white;
-                                            ">
-                                                ${number}
-                                            </div>
-                                        `,
-                                        className: '',
-                                        iconSize: [24, 24],
-                                        iconAnchor: [12, 12]
-                                    }));
-                                } else {
-                                    this.setIcon(icon);  // Reset to original icon
-                                }
+                                this.setIcon(L.divIcon({
+                                    html: iconHtml(number, this.isSelected),
+                                    className: '',
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                }));
+
+                                fetch('/update_marker_status', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        trail_id: trailPoint.TRAIL_ID,
+                                        lat: trailPoint.LATITUDE,
+                                        lon: trailPoint.LONGITUDE,
+                                        is_marked: this.isSelected
+                                    })
+                                });
                             });
+
 
                             let description = trailPoint.DESCRIPTION || "Unknown location";
 
