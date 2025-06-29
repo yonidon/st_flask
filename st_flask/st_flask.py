@@ -11,7 +11,7 @@ import json
 
 
 
-#=======Bugs=======
+#=======Bugs and Features=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
 #Functions inside DOM are not accessible by functions outside it
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
@@ -42,7 +42,7 @@ import json
 # Global state flags
 app = Flask(__name__)
 app.secret_key = 'imsi'  
-#HTTPS_PORT=8999 #Currently unused because ssh in nginx
+#HTTPS_PORT=8999 #Currently unused because https in nginx
 HTTP_PORT=8990
 system_mode = 'stop'  # can be 'start' or 'stop', is sent to backend to activate script
 current_gps_location = ''   # from backend modem JSON requests
@@ -587,7 +587,7 @@ def modem_locations():
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('''
-            SELECT LATITUDE, LONGITUDE, MCC, MNC, LAC, CELL_ID, CALL_RESULT, ARFCN, PCI, TIMESTAMP
+            SELECT LATITUDE, LONGITUDE, RSSI, OPERATOR, LAC, CELL_ID, CALL_RESULT, ARFCN, PCI, TIMESTAMP
             FROM TBL_ST_SIMBOX_EVENTS 
             WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
             ORDER BY ID DESC

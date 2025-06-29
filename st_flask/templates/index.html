@@ -220,25 +220,51 @@
 
 
         //Lines for button to start/stop the st_simbox backend. It responds by start or stop request
+        function updateStartStopButtons(mode) {
+            const startBtn = document.getElementById('startScript');
+            const stopBtn = document.getElementById('stopScript');
+
+            if (mode === 'start') {
+                startBtn.classList.add('active');
+                stopBtn.classList.remove('active');
+            } else {
+                stopBtn.classList.add('active');
+                startBtn.classList.remove('active');
+            }
+
+            // Optional: update status text
+            /*const statusSpan = document.getElementById('scriptStatusValue');
+            if (statusSpan) {
+                statusSpan.textContent = (mode === 'start') ? 'Running' : 'Stopped';
+                statusSpan.style.color = (mode === 'start') ? 'lime' : 'red';
+            }*/
+        }
+
+        // On page load, fetch current state
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/get_mode')
+                .then(res => res.json())
+                .then(data => {
+                updateStartStopButtons(data.mode);
+                });
+        });
+
+        // Start button click
         document.getElementById('startScript').addEventListener('click', function() {
             fetch('/start_script', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    updateStatusIndicators();
-                    messageCounter = 0;  // ✅ reset counter
-                    updateMessageCounterDisplay();
+                .then(() => {
+                updateStartStopButtons('start');
                 });
         });
 
-
+        // Stop button click
         document.getElementById('stopScript').addEventListener('click', function() {
             fetch('/stop_script', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    updateStatusIndicators();
-
+                .then(() => {
+                updateStartStopButtons('stop');
                 });
         });
+
 
         
         document.getElementById('toggleAutoRefresh').addEventListener('click', function() {
@@ -568,7 +594,7 @@
            const savedMode = localStorage.getItem('mode');
                 if (savedMode === 'advanced') {
                     document.body.classList.add('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Stupid Mode';
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
                 } else {
                     document.body.classList.remove('advanced-mode');
                     document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
@@ -806,8 +832,7 @@
                                 const total = results.length;
                                 const okCount = results.filter(r => r.toLowerCase() === 'ok').length;
                                 const successRate = total > 0 ? (okCount / total) * 100 : 0;
-
-                                callResultText = `${okCount} OK / ${total} total → ${successRate.toFixed(1)}%`;
+                                callResultText = `${okCount} out of ${total} → ${successRate.toFixed(1)}%`;
                             } catch (e) {
                                 console.warn("Invalid CALL_RESULT format", item.CALL_RESULT);
                             }
@@ -815,8 +840,9 @@
                             marker.bindTooltip(`
                                 <strong>ARFCN:</strong> ${item.ARFCN || 'N/A'}<br>
                                 <strong>PCI:</strong> ${item.PCI || 'N/A'}<br>
+                                <strong>Operator:</strong> ${item.OPERATOR || 'N/A'}<br>
                                 <strong>TIMESTAMP:</strong> ${item.TIMESTAMP || 'N/A'}<br>
-                                <strong>Call Result:</strong> ${callResultText}
+                                <strong>Successful calls:</strong> ${callResultText}
                             `, { direction: 'top', offset: [0, -5] });
 
                             // Full popup on click

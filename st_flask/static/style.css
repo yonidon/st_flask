@@ -561,6 +561,12 @@ table tbody td {
   background-color: #2a4f91;
 }
 
+.secondary-button-group button.active {
+  background-color: #3a5ba0;
+  border: 1px solid #5a7bcc;
+  color: #ffffff;
+}
+
 
 
 .import-button-group {
