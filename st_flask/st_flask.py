@@ -37,6 +37,10 @@ PORT=8999 #Port to run web server on
 #Add operator to tooltip of points instead of MCC/MNC
 #If no gps then gps of trail point be selected
 #Fix markers overlapping
+#Long click to set default location Instead of double click
+#how to check simbox battery
+#Split frontend files
+#Remove jitter
 
 
 
@@ -223,7 +227,7 @@ def insert_modem_data(modem_number, modem_data,gps_location):
     gps_string_from_modem = gps_location
     try:
         latitude, longitude, altitude = parse_gps_location(gps_string_from_modem)
-        latitude, longitude = jitter_coordinates(latitude, longitude) #Jitter coordinates so they don't overlap
+        #latitude, longitude = jitter_coordinates(latitude, longitude) #Jitter coordinates so they don't overlap
     except Exception:
         print("Failed to get GPS")
         latitude, longitude, altitude = None, None, None
@@ -804,6 +808,7 @@ def update_browser_location():
     browser_gps_location = data.get("gps_location", "")
     return jsonify({"status": "received"}), 200
 
+#Jitter coordinates so they won't overlap. This is currently unused because jitter using frotend instead.
 def jitter_coordinates(lat, lon):
     # Shift about +/- ~5 meters (depending on latitude scale)
     delta_lat = random.uniform(-0.000005, 0.000005)

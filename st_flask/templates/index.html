@@ -29,6 +29,12 @@
 
     <script src="{{ url_for('static', filename='typed.js@2.0.12') }}"></script>
 
+    <!-- Leaflet For marker cluster-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+
     
 
 
@@ -580,7 +586,7 @@
             const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
 
             //Create map
-            const map = L.map('map', { attributionControl: false }).setView(savedCenter, savedZoom);
+            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
             L.control.attribution({ prefix: false }).addTo(map);
 
 
@@ -600,7 +606,48 @@
 
             //Add layers to map
             let gridLayerGroup = L.layerGroup().addTo(map);
-            let markersLayerGroup = L.layerGroup().addTo(map);
+            //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
+
+            let markersLayerGroup = L.markerClusterGroup({
+            iconCreateFunction: function (cluster) {
+                // Get all markers in this cluster
+                const markers = cluster.getAllChildMarkers();
+
+                // Compute aggregated call result statistics
+                let total = 0;
+                let fails = 0;
+
+                markers.forEach(marker => {
+                const callResultStr = marker.options.callResult || '[]';
+                let results = [];
+                try {
+                    results = JSON.parse(callResultStr);
+                } catch(e) {}
+
+                total += results.length;
+                fails += results.filter(r => r.toLowerCase() !== "ok").length;
+                });
+
+                const failRatio = total > 0 ? (fails / total) : 0;
+
+                // Determine color
+                let c = 'marker-cluster-small';  // default class
+                if (failRatio > 0.9) {
+                c = 'marker-cluster-large';  // red (will style below)
+                } else if (failRatio > 0.5) {
+                c = 'marker-cluster-medium'; // yellow
+                } else {
+                c = 'marker-cluster-small';  // green
+                }
+
+                return new L.DivIcon({
+                html: '<div><span>' + cluster.getChildCount() + '</span></div>',
+                className: 'marker-cluster ' + c,
+                iconSize: new L.Point(40, 40)
+                });
+            }
+            });
+            markersLayerGroup.addTo(map);    
             let trailLayerGroup = L.layerGroup().addTo(map);
 
             
@@ -670,9 +717,10 @@
                             if (!item.LATITUDE || !item.LONGITUDE) return;
 
                             let color = 'gray';  // fallback
+                            let results = [];    // declare results here so it's always defined
 
                             try {
-                                const results = JSON.parse(item.CALL_RESULT || '[]');
+                                results = JSON.parse(item.CALL_RESULT || '[]');
                                 const total = results.length;
                                 const failed = results.filter(r => r.toLowerCase() !== 'ok').length;
                                 const failRatio = total > 0 ? failed / total : 0;
@@ -693,7 +741,8 @@
                                 color: color,
                                 radius: 8,
                                 fillOpacity: 0.7,
-                                pane: 'markerPane'
+                                pane: 'markerPane',
+                                callResult: JSON.stringify(results)  // save array as string
                             }).addTo(markersLayerGroup);
 
                             // Compute call result ratio
