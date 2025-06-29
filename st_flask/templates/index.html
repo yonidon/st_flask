@@ -30,9 +30,9 @@
     <script src="{{ url_for('static', filename='typed.js@2.0.12') }}"></script>
 
     <!-- Leaflet For marker cluster-->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='MarkerCluster.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='MarkerCluster.Default.css') }}" />
+    <script src="{{ url_for('static', filename='leaflet.markercluster.js') }}"></script>
 
 
     
@@ -56,6 +56,15 @@
     {% endwith %}
 
     <h1 class="main-header"><span id="animatedHeader"></span></h1>
+
+    <!-- Toggle simple/advanced mode -->
+    <div class="mode-toggle">
+    <button id="modeToggleButton">
+        <i class="fas fa-cogs"></i> Switch to Advanced Mode
+    </button>
+    </div>
+
+    <div id="tabContainer">
     <div class="primary-button-container">
         <div class="primary-button-group">
             <button class="tab-button active" data-tab="main-tab"><i class="fas fa-house"></i> Main</button>
@@ -63,6 +72,7 @@
             <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
             <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
         </div>
+    </div>
     </div>
 
     <div id="main-tab" class="tab-panel active">
@@ -174,8 +184,42 @@
         let collapseAll = false; // false = expanded, true = collapsed
 
 
-        //Lines for button to start/stop the st_simbox script
+        //Toggle advanced/basic mode
+        document.getElementById('modeToggleButton').addEventListener('click', function() {
+            const body = document.body;
+            body.classList.toggle('advanced-mode');
 
+            // Save state in localStorage
+            const isAdvanced = body.classList.contains('advanced-mode');
+            localStorage.setItem('mode', isAdvanced ? 'advanced' : 'stupid');
+
+            // Update button text
+            if (isAdvanced) {
+                this.innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+            } else {
+                this.innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+            }
+
+            // Activate first tab if none
+            if (isAdvanced) {
+                const anyActive = document.querySelector('.tab-button.active');
+                if (!anyActive) {
+                const firstButton = document.querySelector('.tab-button');
+                if (firstButton) {
+                    firstButton.classList.add('active');
+                    const targetId = firstButton.dataset.tab;
+                    document.querySelectorAll('.tab-panel').forEach(panel => {
+                    panel.classList.toggle('active', panel.id === targetId);
+                    });
+                }
+                }
+            }
+        });
+
+
+
+
+        //Lines for button to start/stop the st_simbox backend. It responds by start or stop request
         document.getElementById('startScript').addEventListener('click', function() {
             fetch('/start_script', { method: 'POST' })
                 .then(response => response.json())
@@ -520,6 +564,16 @@
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
 
+            //On page load, load advanced/simple state
+           const savedMode = localStorage.getItem('mode');
+                if (savedMode === 'advanced') {
+                    document.body.classList.add('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Stupid Mode';
+                } else {
+                    document.body.classList.remove('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+            }   
+
             // On page load, always load latest modem state once
             fetch('/latest_json')
                 .then(response => response.json())
@@ -539,8 +593,8 @@
             const tabButtons = document.querySelectorAll('.tab-button');
             const tabPanels = document.querySelectorAll('.tab-panel');
 
-            // Restore last tab from localStorage, or default to 'modems-tab'
-            const lastTabId = localStorage.getItem('activeTab') || 'modems-tab';
+            // Restore last tab from localStorage, or default to 'main-tab'
+            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
 
             // Activate the stored/default tab
             function activateTab(tabId) {

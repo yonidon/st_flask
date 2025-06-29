@@ -608,6 +608,9 @@ table tbody td {
     top: 5px;
     right: 5px;
 }
+
+
+/*Segment for marker cluster*/
 .marker-cluster-small {
   background-color: rgba(0, 128, 0, 0.6); /* green */
   border: 2px solid #006400;
@@ -624,6 +627,34 @@ table tbody td {
   background-color: rgba(220, 20, 60, 0.7); /* red */
   border: 2px solid #b30000;
   color: white;
+}
+
+/*Segment for toggling advanced/stupid mode*/
+/* Hide tab buttons and all tabs except the first by default */
+body:not(.advanced-mode) .primary-button-container {
+  display: none;
+}
+
+body:not(.advanced-mode) .tab-panel-container .tab-panel:not(:first-child) {
+  display: none;
+}
+
+/* In advanced mode, show all */
+body.advanced-mode .primary-button-container {
+  display: flex;
+}
+
+body.advanced-mode .tab-panel-container .tab-panel {
+  display: none; /* Default state is hidden */
+}
+
+body.advanced-mode .tab-panel-container .tab-panel.active {
+  display: block;
+}
+
+.mode-toggle button {
+  display: block;
+  margin: 20px auto;
 }
 
 

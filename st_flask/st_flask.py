@@ -9,16 +9,12 @@ import math
 import random
 import json
 
-app = Flask(__name__)
-app.secret_key = 'imsi'  
-PORT=8999 #Port to run web server on
 
 
 #=======Bugs=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
-#Need to add https that works on phone
-#Functions inside DOM are not accessible by functinos outside it
-#"Update calls" - need to add option to upload a file
+#Functions inside DOM are not accessible by functions outside it
+#"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
 #If importing and duplicate primary key then need to raise exception
 #Add option to lock map
 #Remove map tile console errors
@@ -28,38 +24,41 @@ PORT=8999 #Port to run web server on
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
 #Only one point can be marked
-#Simple/Advanced mode - to hide tabs
-#Merge start and stop button
+#Merge start and stop button (Need to think about this)
 #Add option to stop automatically after x surveys (maybe field with survey counter)
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Add rssi layer to map
 #Add operator to tooltip of points instead of MCC/MNC
 #If no gps then gps of trail point be selected
-#Fix markers overlapping
 #Long click to set default location Instead of double click
 #how to check simbox battery
 #Split frontend files
-#Remove jitter
+#Receive numbers should be saved on refresh
 
 
 
-
-# Global state flag to indicate if script is running
-system_mode = 'stop'  # can be 'start' or 'stop'
+#======================================================
+# Global state flags
+app = Flask(__name__)
+app.secret_key = 'imsi'  
+#HTTPS_PORT=8999 #Currently unused because ssh in nginx
+HTTP_PORT=8990
+system_mode = 'stop'  # can be 'start' or 'stop', is sent to backend to activate script
 current_gps_location = ''   # from backend modem JSON requests
 browser_gps_location = ''  # from browser geolocation updates
-current_survey_running = ''
-
-# Database configuration for remote connection
-#======================================================
-DB_CONFIG_FILE = '/home/guard3/st_flask/db_config.ini'
+current_survey_running = '' # Live status of backend
+latest_json_data = {}  # Global variable to store the latest JSON data
 
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
 GRID_FACTOR=10
 GRID_SIZE_LAT = 0.00009*GRID_FACTOR
 GRID_SIZE_LON = 0.0001 *GRID_FACTOR
+#======================================================
 
+
+# Database configuration for remote connection
+DB_CONFIG_FILE = '/home/guard3/st_flask/db_config.ini'
 
 def load_db_config():
     config = configparser.ConfigParser()
@@ -80,8 +79,9 @@ def load_db_config():
 DATABASE_CONFIG = load_db_config()
 #======================================================
 
-latest_json_data = {}  # Global variable to store the latest JSON data
 
+#======================================================
+#Utility functions
 def convert_epoch_to_datetime(epoch_time):
     """Convert epoch time to MySQL-compatible DATETIME string."""
     return datetime.fromtimestamp(epoch_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -279,6 +279,7 @@ def insert_modem_data(modem_number, modem_data,gps_location):
     try:
         conn.commit()  # Commit the transaction
         print("Data inserted successfully.")
+        flash(f'Inserted data for modem {modem_number}')
     except mysql.connector.Error as err:
         print(f"Error: {err}")
         conn.rollback()  # Roll back the transaction on failure
@@ -821,7 +822,7 @@ if __name__ == '__main__':
 
     #No need to use this, https runs through nginx
     #app.run(host='0.0.0.0', port=PORT, ssl_context=('/home/guard3/st_flask/certs/cert.pem', '/home/guard3/st_flask/certs/key.pem'))
-    app.run(host='0.0.0.0', port=8990)
+    app.run(host='0.0.0.0', port=HTTP_PORT)
     
 #How to create certificate:
 #openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 36500 -nodes
