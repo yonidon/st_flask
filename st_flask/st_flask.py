@@ -33,7 +33,9 @@ import json
 #Receive numbers should be saved on refresh
 #In trail location edit , set as default coordinate
 #Create json for global variables - session name, default location (Using trail), receiving goal, use browser location flag
-#Add field for prison name
+#Add field for prison name in table
+#Fix checkboxes of layers
+#Check calls in airplane mode
 
 
 #======================================================
@@ -43,7 +45,8 @@ app.secret_key = 'imsi'
 #HTTPS_PORT=8999 #Currently unused because https in nginx
 HTTP_PORT=8990
 system_mode = 'stop'  # can be 'start' or 'stop', is sent to backend to activate script
-current_gps_location = ''   # from backend modem JSON requests
+current_gps_location = ''   # Current gps location used
+modem_gps_location = ''   # from backend modem JSON requests
 browser_gps_location = ''  # from browser geolocation updates
 current_survey_running = '' # Live status of backend
 latest_json_data = {}  # Global variable to store the latest JSON data
@@ -502,18 +505,26 @@ def recalculate_grid_table():
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data, system_mode, current_gps_location, browser_gps_location, current_survey_running
+    global latest_json_data, system_mode, current_gps_location, browser_gps_location, current_survey_running,modem_gps_location
     data = request.json
     latest_json_data = data  # update global json
 
     #Update global gps lock status
     gps_location = data.get("gps_location", "")
     current_survey_running = data.get("survey_running", False)
+    modem_gps_location= gps_location
    
     if gps_location and gps_location.strip() != "":
         current_gps_location = gps_location  # only update when non-empty
-    else:
+    elif browser_gps_location and get_setting("use_geolocation")!='false':
         current_gps_location = browser_gps_location
+        print("using geolocation")
+    else:
+        default_lat = get_setting("default_latitude")
+        default_lon = get_setting("default_longitude")
+        if default_lat and default_lon:
+            current_gps_location = f"{default_lat},{default_lon},0"
+            print("using default location")
     
     senders = data.get('senders', {})
     if senders:    
@@ -572,12 +583,28 @@ def stop_script():
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
 
-    global current_gps_location, browser_gps_location, current_survey_running 
-    effective_gps_location = current_gps_location or browser_gps_location or ""
+    global current_gps_location, browser_gps_location, current_survey_running, modem_gps_location
+
+    # Determine effective GPS location and source
+    gps_source = "none"
+    effective_gps_location = ""
+    if modem_gps_location:
+        gps_source = "modem"
+        effective_gps_location = current_gps_location
+    elif browser_gps_location:
+        gps_source = "browser"
+        effective_gps_location = browser_gps_location
+    else:
+        default_lat = get_setting("default_latitude")
+        default_lon = get_setting("default_longitude")
+        if default_lat and default_lon:
+            gps_source = "default"
+            effective_gps_location = f"{default_lat},{default_lon},0"
 
     return jsonify({
         "mode": system_mode,
         "gps_location": effective_gps_location,
+        "gps_source": gps_source,
         "survey_running": current_survey_running
     })
 

@@ -702,6 +702,7 @@
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as default location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -922,7 +923,7 @@
                                     })
                                 });
 
-                                
+
                             });
 
 
@@ -933,6 +934,7 @@
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as default location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -1007,6 +1009,23 @@
                     }
                 });
                 });
+
+                //When clicking on trail point it sets default location in database
+                function setAsDefaultLocation(lat, lon) {
+                    fetch('/set_default_location', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ latitude: lat, longitude: lon })
+                    })
+                    .then(res => res.json())
+                    .then(() => {
+                        alert("Default location saved.");
+
+                        // Optionally update savedCenter immediately
+                        //savedCenter = [parseFloat(lat), parseFloat(lon)];
+                    });
+                }
+
 
        
 
