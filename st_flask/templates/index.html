@@ -71,6 +71,8 @@
             <button class="tab-button" data-tab="modems-tab"><i class="fas fa-mobile"></i> Modems</button>
             <button class="tab-button" data-tab="table-tab"><i class="fas fa-database"></i> Database</button>
             <button class="tab-button" data-tab="map-tab"><i class="fas fa-map"></i> Map</button>
+            <button class="tab-button" data-tab="settings-tab"><i class="fas fa-sliders-h"></i> Settings</button>
+
         </div>
     </div>
     </div>
@@ -165,6 +167,39 @@
         </div>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
+
+    <div id="settings-tab" class="tab-panel">
+    <h2>Configuration Settings</h2>
+    <form id="settingsForm">
+        <label>
+        Session Name:
+        <input type="text" name="session_name">
+        </label><br>
+
+        <label>
+        Receiving Goal:
+        <input type="number" name="receiving_goal">
+        </label><br>
+
+        <label>
+        Default Latitude:
+        <input type="text" name="default_latitude">
+        </label><br>
+
+        <label>
+        Default Longitude:
+        <input type="text" name="default_longitude">
+        </label><br>
+
+        <label>
+        Use Browser Geolocation:
+        <input type="checkbox" name="use_geolocation">
+        </label><br><br>
+
+        <button type="submit">Save Settings</button>
+    </form>
+    </div>
+
 
     <script>
 
@@ -886,6 +921,8 @@
                                         is_marked: this.isSelected
                                     })
                                 });
+
+                                
                             });
 
 
@@ -925,10 +962,56 @@
                     loadMainMapTrail();
                 });
             }
+
+            //Settings tab functions
+            function loadSettings() {
+                fetch('/get_settings')
+                    .then(res => res.json())
+                    .then(data => {
+                    const form = document.getElementById('settingsForm');
+                    form.session_name.value = data.session_name || '';
+                    form.receiving_goal.value = data.receiving_goal || '';
+                    form.default_latitude.value = data.default_latitude || '';
+                    form.default_longitude.value = data.default_longitude || '';
+                    form.use_geolocation.checked = (data.use_geolocation === 'true');
+                    });
+                }
+
+                document.getElementById('settingsForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = e.target;
+                const payload = {
+                    session_name: form.session_name.value,
+                    receiving_goal: form.receiving_goal.value,
+                    default_latitude: form.default_latitude.value,
+                    default_longitude: form.default_longitude.value,
+                    use_geolocation: form.use_geolocation.checked ? 'true' : 'false'
+                };
+
+                fetch('/update_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert('Settings saved.');
+                });
+                });
+
+                // Auto-load when switching to Settings tab
+                document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    if (button.dataset.tab === 'settings-tab') {
+                    loadSettings();
+                    }
+                });
+                });
+
        
 
 
-        //Things that happen after page content is loaded .Need to get functions out of here
+        //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
 
             //On page load, load advanced/simple state
@@ -1006,7 +1089,7 @@
 
 
 
-            //======================Map Segment=========================
+            //======================Map tab Segment=========================
             //Default map center and coordinate
             const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
             const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
@@ -1201,12 +1284,13 @@
             errorTileUrl: '/static/tiles/fallback.png'
         }).addTo(mainMap);
 
-        
-
+        //Add trail layer to map
         let trailLayerGroupMain;
         window.trailLayerGroupMain = L.layerGroup({ pane: 'trailPane' }).addTo(mainMap);
 
-        // Request phone location
+
+
+        //====================== Request phone location==============================
         let userMarker = null;
 
         navigator.geolocation.getCurrentPosition(function(position) {
@@ -1263,27 +1347,17 @@
             showFlashMessage("Unable to get initial location: " + error.message);
         });
 
-        mainMap.doubleClickZoom.disable();
-        /*
-        mainMap.on('dblclick', function (e) {
-                const lat = e.latlng.lat.toFixed(5);
-                const lng = e.latlng.lng.toFixed(5);
-                const zoom = mainMap.getZoom();
+        mainMap.doubleClickZoom.disable();//Disable double click zoom on main map
+        //======================================================================
 
-                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
-                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
-                    localStorage.setItem('defaultMapZoom', zoom);
-                    alert("Default map view saved!");
-                }
-            });
-        */
+
+        //===========Segment for drawing trail on main page map with leaflet draw=============
         const drawnItemsMain = new L.FeatureGroup().addTo(mainMap);
         const drawControlMain = new L.Control.Draw({
             edit: { featureGroup: drawnItemsMain },
             draw: drawControl.options.draw  // reuse same drawing config
         });
         mainMap.addControl(drawControlMain);
-
 
         mainMap.on(L.Draw.Event.CREATED, function (e) {
             const layer = e.layer;
@@ -1313,8 +1387,8 @@
         });
 
 
-
-            loadMainMapTrail();
+        //Load trail in main map
+        loadMainMapTrail();
 
         //===============================================================   
             
@@ -1327,7 +1401,8 @@
             setInterval(fetchData, fetchDataInterval); // Call repeatedly every second
 
             
-        });    
+    });    
+        //Interval for joining main table with call result table. Probably delete this
         //updateCallResult();
         //setInterval(updateCallResult, updateCallResultInterval);
 

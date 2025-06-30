@@ -13,7 +13,6 @@ import json
 
 #=======Bugs and Features=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
-#Functions inside DOM are not accessible by functions outside it
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
 #If importing and duplicate primary key then need to raise exception
 #Add option to lock map
@@ -129,6 +128,13 @@ def parse_gps_location(gps_location_string):
 
     return latitude, longitude, altitude
 
+#Jitter coordinates so they won't overlap. This is currently unused because jitter using frotend instead.
+def jitter_coordinates(lat, lon):
+    # Shift about +/- ~5 meters (depending on latitude scale)
+    delta_lat = random.uniform(-0.000005, 0.000005)
+    delta_lon = random.uniform(-0.000005, 0.000005)
+    return lat + delta_lat, lon + delta_lon
+
 #Create table if not exists
 def init_db():
     try:
@@ -201,7 +207,14 @@ def init_db():
                 TIMESTAMP DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-
+        #Table for settings
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_SETTINGS (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                CONFIG_KEY VARCHAR(64) UNIQUE,
+                CONFIG_VALUE TEXT
+            )
+        ''')
         conn.commit()
         print("Tables initialized successfully.")
     except mysql.connector.Error as err:
@@ -807,12 +820,89 @@ def update_browser_location():
     browser_gps_location = data.get("gps_location", "")
     return jsonify({"status": "received"}), 200
 
-#Jitter coordinates so they won't overlap. This is currently unused because jitter using frotend instead.
-def jitter_coordinates(lat, lon):
-    # Shift about +/- ~5 meters (depending on latitude scale)
-    delta_lat = random.uniform(-0.000005, 0.000005)
-    delta_lon = random.uniform(-0.000005, 0.000005)
-    return lat + delta_lat, lon + delta_lon
+
+#==================Settings segment============================
+def get_setting(key):
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute("SELECT CONFIG_VALUE FROM TBL_ST_SIMBOX_SETTINGS WHERE CONFIG_KEY = %s", (key,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return row[0] if row else None
+
+def set_setting(key, value):
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO TBL_ST_SIMBOX_SETTINGS (CONFIG_KEY, CONFIG_VALUE)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE CONFIG_VALUE = %s
+    """, (key, value, value))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def get_all_settings():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT CONFIG_KEY, CONFIG_VALUE FROM TBL_ST_SIMBOX_SETTINGS")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return {row['CONFIG_KEY']: row['CONFIG_VALUE'] for row in rows}
+
+@app.route('/get_settings')
+def get_settings():
+    return jsonify(get_all_settings())
+
+@app.route('/update_settings', methods=['POST'])
+def update_settings():
+    data = request.json
+    for k, v in data.items():
+        set_setting(k, v)
+    return jsonify({"status": "ok"})
+
+@app.route('/set_default_location', methods=['POST'])
+def set_default_location():
+    data = request.json
+    lat = str(data.get('latitude'))
+    lon = str(data.get('longitude'))
+    set_setting('default_latitude', lat)
+    set_setting('default_longitude', lon)
+    return jsonify({"status": "default location saved"})
+
+
+#============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
