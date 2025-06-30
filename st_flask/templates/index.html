@@ -595,6 +595,8 @@
                 });
             }
 
+            //=======Functions to add layers to map in map tab=====================
+
             //Load trail
             function loadTrail() {
                 fetch('/get_trail')
@@ -683,7 +685,7 @@
 
                 });
             }
-
+            //Load Grid
             function loadGridLayer() {
                 fetch('/map_grid_layer')
                 .then(res => res.json())
@@ -801,403 +803,8 @@
                         alert("Failed to load marker layer.");
                     });
             }
-       
 
-
-        //Things that happen after page content is loaded .Need to get functions out of here
-        document.addEventListener('DOMContentLoaded', function () {
-
-            //On page load, load advanced/simple state
-           const savedMode = localStorage.getItem('mode');
-                if (savedMode === 'advanced') {
-                    document.body.classList.add('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
-                } else {
-                    document.body.classList.remove('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
-            }   
-
-            // On page load, always load latest modem state once
-            fetch('/latest_json')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.senders && Object.keys(data.senders).length > 0) {
-                        updateModemStatus(data);
-                    }
-                    updateStatusIndicators(data);  // <-- also update status indicators immediately
-                });
-
-            
-            //Update if script is started or stopped
-            updateStatusIndicators();
-            updateMessageCounterDisplay();
-            
-            // Tab switching logic
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabPanels = document.querySelectorAll('.tab-panel');
-
-            // Restore last tab from localStorage, or default to 'main-tab'
-            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
-
-            // Activate the stored/default tab
-            function activateTab(tabId) {
-                tabButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.tab === tabId);
-                });
-
-                tabPanels.forEach(panel => {
-                    panel.classList.toggle('active', panel.id === tabId);
-                });
-            }
-
-            // Set initial tab
-            activateTab(lastTabId);
-
-            // Set click handlers
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.dataset.tab;
-                    activateTab(tabId);
-                    localStorage.setItem('activeTab', tabId); // Save to storage
-
-                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
-                        if (tabId === 'map-tab') {
-                        setTimeout(() => {
-                            map.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-                    // For main tab too
-                        if (tabId === 'main-tab') {
-                        setTimeout(() => {
-                            mainMap.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-
-
-
-                });
-            });
-
-
-
-            //======================Map Segment=========================
-            //Default map center and coordinate
-            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
-            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
-
-            //Create map
-            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
-            L.control.attribution({ prefix: false }).addTo(map);
-
-
-            //Add zIndex panes for enforcing order between layers
-            map.createPane("gridPane");
-            map.createPane("markerPane");
-            map.createPane("trailPane");
-            map.createPane("trailMarkerPane");
-
-            //Order priorities
-            map.getPane("trailMarkerPane").style.zIndex = 300;
-            map.getPane("gridPane").style.zIndex = 400;
-            map.getPane("markerPane").style.zIndex = 500;
-            map.getPane("trailPane").style.zIndex = 600;
-            
-            //Add layers to map
-            let gridLayerGroup;
-            window.gridLayerGroup = L.layerGroup({ pane: 'gridPane' }).addTo(map);
-
-            //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
-            let markersLayerGroup;
-            window.markersLayerGroup = L.markerClusterGroup({
-            iconCreateFunction: function (cluster) {
-                // Get all markers in this cluster
-                const markers = cluster.getAllChildMarkers();
-
-                // Compute aggregated call result statistics
-                let total = 0;
-                let fails = 0;
-
-                markers.forEach(marker => {
-                const callResultStr = marker.options.callResult || '[]';
-                let results = [];
-                try {
-                    results = JSON.parse(callResultStr);
-                } catch(e) {}
-
-                total += results.length;
-                fails += results.filter(r => r.toLowerCase() !== "ok").length;
-                });
-
-                const failRatio = total > 0 ? (fails / total) : 0;
-
-                // Determine color
-                let c = 'marker-cluster-small';  // default class
-                if (failRatio > 0.9) {
-                c = 'marker-cluster-large';  // red (will style below)
-                } else if (failRatio > 0.5) {
-                c = 'marker-cluster-medium'; // yellow
-                } else {
-                c = 'marker-cluster-small';  // green
-                }
-
-                return new L.DivIcon({
-                html: '<div><span>' + cluster.getChildCount() + '</span></div>',
-                className: 'marker-cluster ' + c,
-                iconSize: new L.Point(40, 40)
-                });
-            }
-            }).addTo(map);  
-            
-            let trailLayerGroup;
-            window.trailLayerGroup = L.layerGroup({ pane: 'trailPane' }).addTo(map);
-
-
-            
-
-            var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
-                minZoom: 0,
-                maxZoom: 22,
-                tms: false,
-                errorTileUrl: '/static/tiles/fallback.png',
-                attribution: 'Created by QGIS'
-            }).addTo(map);
-
-
-
-            //=======Functions to add layers to map=====================
-
-
-
-            
-
-
-            
-            map.doubleClickZoom.disable();//Disable zoom on double click
-
-            map.on('dblclick', function (e) {
-                const lat = e.latlng.lat.toFixed(5);
-                const lng = e.latlng.lng.toFixed(5);
-                const zoom = map.getZoom();
-
-                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
-                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
-                    localStorage.setItem('defaultMapZoom', zoom);
-                    alert("Default map view saved!");
-                }
-            });
-
-            
-            document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    markersLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(markersLayerGroup);
-                }
-            });
-
-            document.getElementById('toggleGridLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    gridLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(gridLayerGroup);
-                }
-            });
-
-            document.getElementById('toggleTrailLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    trailLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(trailLayerGroup);
-                }
-            });
-
-
-            const drawnItems = new L.FeatureGroup().addTo(map);
-
-            const drawControl = new L.Control.Draw({
-                edit: {
-                    featureGroup: drawnItems
-                },
-                draw: {
-                    polygon: false,
-                    rectangle: false,
-                    circle: false,
-                    circlemarker: false,
-                    marker: false,
-                    polyline: {
-                        shapeOptions: {
-                            color: 'orange',
-                            weight: 4
-                        }
-                    }
-                }
-            });
-            map.addControl(drawControl);
-
-            map.on(L.Draw.Event.CREATED, function (e) {
-                const layer = e.layer;
-                drawnItems.addLayer(layer);
-
-                const latlngs = layer.getLatLngs();
-
-                if (confirm("Save this trail?")) {
-                    // Send entire polyline to server
-                    const trailData = latlngs.map(pt => ({
-                        lat: pt.lat,
-                        lon: pt.lng,
-                        alt: 0  // You can extend for altitude if needed
-                    }));
-
-                    fetch('/save_trail', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(trailData)
-                    })
-                    .then(res => res.json())
-                    .then(result => {
-                        alert("Trail saved.");
-                        drawnItems.clearLayers();
-                        loadTrail();
-                    });
-                }
-            });
-
-            loadGridLayer();
-            loadMarkerLayer();
-            loadTrail();    
-
-        //================================================================
-        
-        //================SEGMENT FOR MAIN PAGE MAP==================
-        // Create simple main screen map
-        const mainMap = L.map('mainMap', { attributionControl: false }).setView(savedCenter, savedZoom);
-        L.control.attribution({ prefix: false }).addTo(mainMap);
-
-        // Add only trailPane to this map
-        mainMap.createPane("trailPane");
-        mainMap.getPane("trailPane").style.zIndex = 500;
-
-        mainMap.createPane("trailMarkerPane");
-        mainMap.getPane("trailMarkerPane").style.zIndex = 400;
-
-        L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
-            minZoom: 0,
-            maxZoom: 22,
-            tms: false,
-            errorTileUrl: '/static/tiles/fallback.png'
-        }).addTo(mainMap);
-
-        
-
-        let trailLayerGroupMain = L.layerGroup().addTo(mainMap);
-
-        // Request phone location
-        let userMarker = null;
-
-        navigator.geolocation.getCurrentPosition(function(position) {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-
-            // Use icon instead   
-            const icon = L.divIcon({
-                html: '<i class="fas fa-location-arrow fa-2x" style="color: blue;"></i>',
-                className: '',
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]  // center the icon on the point
-            });
-            userMarker = L.marker([userLat, userLng], { icon: icon }).addTo(mainMap).bindTooltip("You are here");
-
-
-            // Center the map initially
-            mainMap.setView([userLat, userLng], 16);
-
-            // Start watching for live updates
-            navigator.geolocation.watchPosition(function(position) {
-                const newLat = position.coords.latitude;
-                const newLng = position.coords.longitude;
-
-                 // Send to backend:
-                fetch('/update_browser_location', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        gps_location: `${userLat},${userLng}`
-                    })
-                }).then(res => {
-                    if (!res.ok) {
-                        console.error("Failed to send browser location");
-                    }
-                }).catch(err => {
-                    console.error("Error sending browser location:", err);
-                });
-
-                console.log("Location updated:", newLat, newLng);
-                showFlashMessage("Location updated:", newLat, newLng);
-
-                // Move the existing marker
-                userMarker.setLatLng([newLat, newLng]);
-            }, function(error) {
-                showFlashMessage("Unable to update location: " + error.message);
-            }, {
-                enableHighAccuracy: true,
-                maximumAge: 10000,
-                timeout: 5000
-            });
-
-        }, function(error) {
-            showFlashMessage("Unable to get initial location: " + error.message);
-        });
-
-        mainMap.doubleClickZoom.disable();
-        /*
-        mainMap.on('dblclick', function (e) {
-                const lat = e.latlng.lat.toFixed(5);
-                const lng = e.latlng.lng.toFixed(5);
-                const zoom = mainMap.getZoom();
-
-                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
-                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
-                    localStorage.setItem('defaultMapZoom', zoom);
-                    alert("Default map view saved!");
-                }
-            });
-        */
-        const drawnItemsMain = new L.FeatureGroup().addTo(mainMap);
-        const drawControlMain = new L.Control.Draw({
-            edit: { featureGroup: drawnItemsMain },
-            draw: drawControl.options.draw  // reuse same drawing config
-        });
-        mainMap.addControl(drawControlMain);
-
-
-        mainMap.on(L.Draw.Event.CREATED, function (e) {
-            const layer = e.layer;
-            drawnItemsMain.addLayer(layer);
-
-            const latlngs = layer.getLatLngs();
-
-            if (confirm("Save this trail?")) {
-                const trailData = latlngs.map(pt => ({
-                    lat: pt.lat,
-                    lon: pt.lng,
-                    alt: 0
-                }));
-
-                fetch('/save_trail', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(trailData)
-                })
-                .then(res => res.json())
-                .then(result => {
-                    alert("Trail saved.");
-                    drawnItemsMain.clearLayers();
-                    loadMainMapTrail();
-                });
-            }
-        });
-
-        function loadMainMapTrail() {
+            function loadMainMapTrail() {
                 fetch('/get_trail')
                 .then(res => res.json())
                 .then(data => {
@@ -1310,7 +917,7 @@
 
                 });
             }
-        function deleteMainMapTrail(trailId) {
+            function deleteMainMapTrail(trailId) {
                 fetch(`/delete_trail/${trailId}`, { method: 'POST' })
                 .then(res => res.json())
                 .then(result => {
@@ -1318,6 +925,394 @@
                     loadMainMapTrail();
                 });
             }
+       
+
+
+        //Things that happen after page content is loaded .Need to get functions out of here
+        document.addEventListener('DOMContentLoaded', function () {
+
+            //On page load, load advanced/simple state
+           const savedMode = localStorage.getItem('mode');
+                if (savedMode === 'advanced') {
+                    document.body.classList.add('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+                } else {
+                    document.body.classList.remove('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+            }   
+
+            // On page load, always load latest modem state once
+            fetch('/latest_json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.senders && Object.keys(data.senders).length > 0) {
+                        updateModemStatus(data);
+                    }
+                    updateStatusIndicators(data);  // <-- also update status indicators immediately
+                });
+
+            
+            //Update if script is started or stopped
+            updateStatusIndicators();
+            updateMessageCounterDisplay();
+            
+            // Tab switching logic
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+
+            // Restore last tab from localStorage, or default to 'main-tab'
+            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
+
+            // Activate the stored/default tab
+            function activateTab(tabId) {
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabId);
+                });
+
+                tabPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.id === tabId);
+                });
+            }
+
+            // Set initial tab
+            activateTab(lastTabId);
+
+            // Set click handlers
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    activateTab(tabId);
+                    localStorage.setItem('activeTab', tabId); // Save to storage
+
+                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
+                        if (tabId === 'map-tab') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+                    // For main tab too
+                        if (tabId === 'main-tab') {
+                        setTimeout(() => {
+                            mainMap.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+
+
+
+                });
+            });
+
+
+
+
+
+            //======================Map Segment=========================
+            //Default map center and coordinate
+            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
+            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
+
+            //Create map
+            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
+            L.control.attribution({ prefix: false }).addTo(map);
+
+
+            //Add zIndex panes for enforcing order between layers
+            map.createPane("gridPane");
+            map.createPane("markerPane");
+            map.createPane("trailPane");
+            map.createPane("trailMarkerPane");
+
+            //Order priorities
+            map.getPane("trailMarkerPane").style.zIndex = 300;
+            map.getPane("gridPane").style.zIndex = 400;
+            map.getPane("markerPane").style.zIndex = 500;
+            map.getPane("trailPane").style.zIndex = 600;
+            
+            //Add layers to map
+            let gridLayerGroup;
+            window.gridLayerGroup = L.layerGroup({ pane: 'gridPane' }).addTo(map);
+
+            //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
+            let markersLayerGroup;
+            window.markersLayerGroup = L.markerClusterGroup({
+            iconCreateFunction: function (cluster) {
+                // Get all markers in this cluster
+                const markers = cluster.getAllChildMarkers();
+
+                // Compute aggregated call result statistics
+                let total = 0;
+                let fails = 0;
+
+                markers.forEach(marker => {
+                const callResultStr = marker.options.callResult || '[]';
+                let results = [];
+                try {
+                    results = JSON.parse(callResultStr);
+                } catch(e) {}
+
+                total += results.length;
+                fails += results.filter(r => r.toLowerCase() !== "ok").length;
+                });
+
+                const failRatio = total > 0 ? (fails / total) : 0;
+
+                // Determine color
+                let c = 'marker-cluster-small';  // default class
+                if (failRatio > 0.9) {
+                c = 'marker-cluster-large';  // red (will style below)
+                } else if (failRatio > 0.5) {
+                c = 'marker-cluster-medium'; // yellow
+                } else {
+                c = 'marker-cluster-small';  // green
+                }
+
+                return new L.DivIcon({
+                html: '<div><span>' + cluster.getChildCount() + '</span></div>',
+                className: 'marker-cluster ' + c,
+                iconSize: new L.Point(40, 40)
+                });
+            }
+            }).addTo(map);  
+
+            //Attach it to window so it will be a global variable accesible from outside
+            let trailLayerGroup;
+            window.trailLayerGroup = L.layerGroup({ pane: 'trailPane' }).addTo(map);
+
+            var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
+                minZoom: 0,
+                maxZoom: 22,
+                tms: false,
+                errorTileUrl: '/static/tiles/fallback.png',
+                attribution: 'Created by QGIS'
+            }).addTo(map);
+ 
+            map.doubleClickZoom.disable();//Disable zoom on double click
+
+            //Double click function to set default zoom level
+            map.on('dblclick', function (e) {
+                const lat = e.latlng.lat.toFixed(5);
+                const lng = e.latlng.lng.toFixed(5);
+                const zoom = map.getZoom();
+
+                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
+                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
+                    localStorage.setItem('defaultMapZoom', zoom);
+                    alert("Default map view saved!");
+                }
+            });
+
+            //Functions to toggle layers on map
+            document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    markersLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(markersLayerGroup);
+                }
+            });
+
+            document.getElementById('toggleGridLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    gridLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(gridLayerGroup);
+                }
+            });
+
+            document.getElementById('toggleTrailLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    trailLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(trailLayerGroup);
+                }
+            });
+
+            const drawnItems = new L.FeatureGroup().addTo(map);
+
+            const drawControl = new L.Control.Draw({
+                edit: {
+                    featureGroup: drawnItems
+                },
+                draw: {
+                    polygon: false,
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                    polyline: {
+                        shapeOptions: {
+                            color: 'orange',
+                            weight: 4
+                        }
+                    }
+                }
+            });
+            map.addControl(drawControl);
+
+            map.on(L.Draw.Event.CREATED, function (e) {
+                const layer = e.layer;
+                drawnItems.addLayer(layer);
+
+                const latlngs = layer.getLatLngs();
+
+                if (confirm("Save this trail?")) {
+                    // Send entire polyline to server
+                    const trailData = latlngs.map(pt => ({
+                        lat: pt.lat,
+                        lon: pt.lng,
+                        alt: 0  // You can extend for altitude if needed
+                    }));
+
+                    fetch('/save_trail', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(trailData)
+                    })
+                    .then(res => res.json())
+                    .then(result => {
+                        alert("Trail saved.");
+                        drawnItems.clearLayers();
+                        loadTrail();
+                    });
+                }
+            });
+
+            loadGridLayer();
+            loadMarkerLayer();
+            loadTrail();    
+
+        //================================================================
+        
+        //================SEGMENT FOR MAIN PAGE MAP==================
+        // Create simple main screen map
+        const mainMap = L.map('mainMap', { attributionControl: false }).setView(savedCenter, savedZoom);
+        L.control.attribution({ prefix: false }).addTo(mainMap);
+
+        // Add only trailPane to this map
+        mainMap.createPane("trailPane");
+        mainMap.getPane("trailPane").style.zIndex = 500;
+
+        mainMap.createPane("trailMarkerPane");
+        mainMap.getPane("trailMarkerPane").style.zIndex = 400;
+
+        L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
+            minZoom: 0,
+            maxZoom: 22,
+            tms: false,
+            errorTileUrl: '/static/tiles/fallback.png'
+        }).addTo(mainMap);
+
+        
+
+        let trailLayerGroupMain;
+        window.trailLayerGroupMain = L.layerGroup({ pane: 'trailPane' }).addTo(mainMap);
+
+        // Request phone location
+        let userMarker = null;
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            // Use icon instead   
+            const icon = L.divIcon({
+                html: '<i class="fas fa-location-arrow fa-2x" style="color: blue;"></i>',
+                className: '',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]  // center the icon on the point
+            });
+            userMarker = L.marker([userLat, userLng], { icon: icon }).addTo(mainMap).bindTooltip("You are here");
+
+
+            // Center the map initially
+            mainMap.setView([userLat, userLng], 16);
+
+            // Start watching for live updates
+            navigator.geolocation.watchPosition(function(position) {
+                const newLat = position.coords.latitude;
+                const newLng = position.coords.longitude;
+
+                 // Send to backend:
+                fetch('/update_browser_location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gps_location: `${userLat},${userLng}`
+                    })
+                }).then(res => {
+                    if (!res.ok) {
+                        console.error("Failed to send browser location");
+                    }
+                }).catch(err => {
+                    console.error("Error sending browser location:", err);
+                });
+
+                console.log("Location updated:", newLat, newLng);
+                showFlashMessage("Location updated:", newLat, newLng);
+
+                // Move the existing marker
+                userMarker.setLatLng([newLat, newLng]);
+            }, function(error) {
+                showFlashMessage("Unable to update location: " + error.message);
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 10000,
+                timeout: 5000
+            });
+
+        }, function(error) {
+            showFlashMessage("Unable to get initial location: " + error.message);
+        });
+
+        mainMap.doubleClickZoom.disable();
+        /*
+        mainMap.on('dblclick', function (e) {
+                const lat = e.latlng.lat.toFixed(5);
+                const lng = e.latlng.lng.toFixed(5);
+                const zoom = mainMap.getZoom();
+
+                if (confirm(`Set default view to:\nLat: ${lat}\nLng: ${lng}\nZoom: ${zoom}?`)) {
+                    localStorage.setItem('defaultMapCenter', JSON.stringify([lat, lng]));
+                    localStorage.setItem('defaultMapZoom', zoom);
+                    alert("Default map view saved!");
+                }
+            });
+        */
+        const drawnItemsMain = new L.FeatureGroup().addTo(mainMap);
+        const drawControlMain = new L.Control.Draw({
+            edit: { featureGroup: drawnItemsMain },
+            draw: drawControl.options.draw  // reuse same drawing config
+        });
+        mainMap.addControl(drawControlMain);
+
+
+        mainMap.on(L.Draw.Event.CREATED, function (e) {
+            const layer = e.layer;
+            drawnItemsMain.addLayer(layer);
+
+            const latlngs = layer.getLatLngs();
+
+            if (confirm("Save this trail?")) {
+                const trailData = latlngs.map(pt => ({
+                    lat: pt.lat,
+                    lon: pt.lng,
+                    alt: 0
+                }));
+
+                fetch('/save_trail', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(trailData)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Trail saved.");
+                    drawnItemsMain.clearLayers();
+                    loadMainMapTrail();
+                });
+            }
+        });
+
+
 
             loadMainMapTrail();
 
