@@ -584,165 +584,106 @@
                     });
                 }
             }
+
         
+            function deleteTrail(trailId) {
+                fetch(`/delete_trail/${trailId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(result => {
+                    alert("Trail deleted.");
+                    loadTrail();
+                });
+            }
 
-
-        //Things that happen after page content is loaded
-        document.addEventListener('DOMContentLoaded', function () {
-
-            //On page load, load advanced/simple state
-           const savedMode = localStorage.getItem('mode');
-                if (savedMode === 'advanced') {
-                    document.body.classList.add('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
-                } else {
-                    document.body.classList.remove('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
-            }   
-
-            // On page load, always load latest modem state once
-            fetch('/latest_json')
-                .then(response => response.json())
+            //Load trail
+            function loadTrail() {
+                fetch('/get_trail')
+                .then(res => res.json())
                 .then(data => {
-                    if (data.senders && Object.keys(data.senders).length > 0) {
-                        updateModemStatus(data);
+                    trailLayerGroup.clearLayers();
+
+                    const trails = {};
+
+                    data.forEach(item => {
+                        if (!trails[item.TRAIL_ID]) {
+                            trails[item.TRAIL_ID] = [];
+                        }
+                        trails[item.TRAIL_ID].push(item);
+                    });
+
+                    for (const trailId in trails) {
+                        const points = trails[trailId];
+
+                        const latlngs = points.map(trailPoint => [trailPoint.LATITUDE, trailPoint.LONGITUDE]);
+
+                        const polyline = L.polyline(latlngs, {
+                            color: 'black',
+                            weight: 5,
+                            opacity: 1.0,
+                            dashArray: '10,6',
+                            lineCap: 'round',
+                            pane: 'trailMarkerPane'
+                        }).addTo(trailLayerGroup);
+
+                        points.forEach((trailPoint, index) => {
+                            const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
+                            const number = index + 1;
+
+                            const iconHtml = (number, marked) => `
+                                <div style="
+                                    width: 24px;
+                                    height: 24px;
+                                    background-color: ${marked ? 'blue' : 'white'};
+                                    border: 2px solid black;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    line-height: 24px;
+                                    font-weight: bold;
+                                    font-size: 14px;
+                                    color: ${marked ? 'white' : 'black'};
+                                ">
+                                    ${number}
+                                </div>
+                            `;
+
+                            const marker = L.marker(latlng, {
+                            icon: L.divIcon({
+                                html: iconHtml(number, trailPoint.IS_MARKED),
+                                className: '',
+                                iconSize: [24, 24],
+                                iconAnchor: [12, 12]
+                            }),
+                            pane: 'trailPane'
+                            }).addTo(trailLayerGroup);
+
+                            marker.isSelected = trailPoint.IS_MARKED;
+
+                            let description = trailPoint.DESCRIPTION || "Unknown location";
+
+                            marker.bindPopup(`
+                            <div class="popup-content">
+                                <div class="popup-header">
+                                    <b>Location</b>
+                                    <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
+                                </div>
+                                <div class="popup-description">${description}</div>
+                            </div>
+                        `, { className: 'custom-popup' });
+
+                        
+                        });
+
+                        polyline.on('click', function() {
+                            if (confirm(`Delete trail ID ${trailId}?`)) {
+                                deleteTrail(trailId);
+                            }
+                        });
                     }
-                    updateStatusIndicators(data);  // <-- also update status indicators immediately
-                });
 
-            
-            //Update if script is started or stopped
-            updateStatusIndicators();
-            updateMessageCounterDisplay();
-            
-            // Tab switching logic
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabPanels = document.querySelectorAll('.tab-panel');
 
-            // Restore last tab from localStorage, or default to 'main-tab'
-            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
-
-            // Activate the stored/default tab
-            function activateTab(tabId) {
-                tabButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.tab === tabId);
-                });
-
-                tabPanels.forEach(panel => {
-                    panel.classList.toggle('active', panel.id === tabId);
                 });
             }
 
-            // Set initial tab
-            activateTab(lastTabId);
-
-            // Set click handlers
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.dataset.tab;
-                    activateTab(tabId);
-                    localStorage.setItem('activeTab', tabId); // Save to storage
-
-                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
-                        if (tabId === 'map-tab') {
-                        setTimeout(() => {
-                            map.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-                    // For main tab too
-                        if (tabId === 'main-tab') {
-                        setTimeout(() => {
-                            mainMap.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-
-
-
-                });
-            });
-
-            //Default map center and coordinate
-            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
-            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
-
-            //Create map
-            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
-            L.control.attribution({ prefix: false }).addTo(map);
-
-
-            //Add zIndex panes for enforcing order between layers
-            map.createPane("gridPane");
-            map.createPane("markerPane");
-            map.createPane("trailPane");
-            map.createPane("trailMarkerPane");
-
-            map.getPane("gridPane").style.zIndex = 400;
-            map.getPane("markerPane").style.zIndex = 500;
-            map.getPane("trailPane").style.zIndex = 600;
-            map.getPane("trailMarkerPane").style.zIndex = 300;
-
-            
-        
-
-            //Add layers to map
-            let gridLayerGroup = L.layerGroup().addTo(map);
-            //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
-
-            let markersLayerGroup = L.markerClusterGroup({
-            iconCreateFunction: function (cluster) {
-                // Get all markers in this cluster
-                const markers = cluster.getAllChildMarkers();
-
-                // Compute aggregated call result statistics
-                let total = 0;
-                let fails = 0;
-
-                markers.forEach(marker => {
-                const callResultStr = marker.options.callResult || '[]';
-                let results = [];
-                try {
-                    results = JSON.parse(callResultStr);
-                } catch(e) {}
-
-                total += results.length;
-                fails += results.filter(r => r.toLowerCase() !== "ok").length;
-                });
-
-                const failRatio = total > 0 ? (fails / total) : 0;
-
-                // Determine color
-                let c = 'marker-cluster-small';  // default class
-                if (failRatio > 0.9) {
-                c = 'marker-cluster-large';  // red (will style below)
-                } else if (failRatio > 0.5) {
-                c = 'marker-cluster-medium'; // yellow
-                } else {
-                c = 'marker-cluster-small';  // green
-                }
-
-                return new L.DivIcon({
-                html: '<div><span>' + cluster.getChildCount() + '</span></div>',
-                className: 'marker-cluster ' + c,
-                iconSize: new L.Point(40, 40)
-                });
-            }
-            });
-            markersLayerGroup.addTo(map);    
-            let trailLayerGroup = L.layerGroup().addTo(map);
-
-            
-
-            var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
-                minZoom: 0,
-                maxZoom: 22,
-                tms: false,
-                errorTileUrl: '/static/tiles/fallback.png',
-                attribution: 'Created by QGIS'
-            }).addTo(map);
-
-
-
-            //=======Functions to add layers to map=====================
             function loadGridLayer() {
                 fetch('/map_grid_layer')
                 .then(res => res.json())
@@ -860,112 +801,179 @@
                         alert("Failed to load marker layer.");
                     });
             }
-            //Load trail
-            function loadTrail() {
-                fetch('/get_trail')
-                .then(res => res.json())
+       
+
+
+        //Things that happen after page content is loaded .Need to get functions out of here
+        document.addEventListener('DOMContentLoaded', function () {
+
+            //On page load, load advanced/simple state
+           const savedMode = localStorage.getItem('mode');
+                if (savedMode === 'advanced') {
+                    document.body.classList.add('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+                } else {
+                    document.body.classList.remove('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+            }   
+
+            // On page load, always load latest modem state once
+            fetch('/latest_json')
+                .then(response => response.json())
                 .then(data => {
-                    trailLayerGroup.clearLayers();
+                    if (data.senders && Object.keys(data.senders).length > 0) {
+                        updateModemStatus(data);
+                    }
+                    updateStatusIndicators(data);  // <-- also update status indicators immediately
+                });
 
-                    const trails = {};
+            
+            //Update if script is started or stopped
+            updateStatusIndicators();
+            updateMessageCounterDisplay();
+            
+            // Tab switching logic
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
 
-                    data.forEach(item => {
-                        if (!trails[item.TRAIL_ID]) {
-                            trails[item.TRAIL_ID] = [];
-                        }
-                        trails[item.TRAIL_ID].push(item);
-                    });
+            // Restore last tab from localStorage, or default to 'main-tab'
+            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
 
-                    for (const trailId in trails) {
-                        const points = trails[trailId];
+            // Activate the stored/default tab
+            function activateTab(tabId) {
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabId);
+                });
 
-                        const latlngs = points.map(trailPoint => [trailPoint.LATITUDE, trailPoint.LONGITUDE]);
+                tabPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.id === tabId);
+                });
+            }
 
-                        const polyline = L.polyline(latlngs, {
-                            color: 'black',
-                            weight: 5,
-                            opacity: 1.0,
-                            dashArray: '10,6',
-                            lineCap: 'round',
-                            pane: 'trailMarkerPane'
-                        }).addTo(trailLayerGroup);
+            // Set initial tab
+            activateTab(lastTabId);
 
-                        points.forEach((trailPoint, index) => {
-                            const latlng = [trailPoint.LATITUDE, trailPoint.LONGITUDE];
-                            const number = index + 1;
+            // Set click handlers
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    activateTab(tabId);
+                    localStorage.setItem('activeTab', tabId); // Save to storage
 
-                            const iconHtml = (number, marked) => `
-                                <div style="
-                                    width: 24px;
-                                    height: 24px;
-                                    background-color: ${marked ? 'blue' : 'white'};
-                                    border: 2px solid black;
-                                    border-radius: 4px;
-                                    text-align: center;
-                                    line-height: 24px;
-                                    font-weight: bold;
-                                    font-size: 14px;
-                                    color: ${marked ? 'white' : 'black'};
-                                ">
-                                    ${number}
-                                </div>
-                            `;
-
-                            const marker = L.marker(latlng, {
-                            icon: L.divIcon({
-                                html: iconHtml(number, trailPoint.IS_MARKED),
-                                className: '',
-                                iconSize: [24, 24],
-                                iconAnchor: [12, 12]
-                            }),
-                            pane: 'trailPane'
-                            }).addTo(trailLayerGroup);
-
-                            marker.isSelected = trailPoint.IS_MARKED;
-
-                            let description = trailPoint.DESCRIPTION || "Unknown location";
-
-                            marker.bindPopup(`
-                            <div class="popup-content">
-                                <div class="popup-header">
-                                    <b>Location</b>
-                                    <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
-                                </div>
-                                <div class="popup-description">${description}</div>
-                            </div>
-                        `, { className: 'custom-popup' });
-
-                        
-                        });
-
-                        polyline.on('click', function() {
-                            if (confirm(`Delete trail ID ${trailId}?`)) {
-                                deleteTrail(trailId);
-                            }
-                        });
+                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
+                        if (tabId === 'map-tab') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+                    // For main tab too
+                        if (tabId === 'main-tab') {
+                        setTimeout(() => {
+                            mainMap.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
                     }
 
 
-                });
-            }
 
-            function deleteTrail(trailId) {
-                fetch(`/delete_trail/${trailId}`, { method: 'POST' })
-                .then(res => res.json())
-                .then(result => {
-                    alert("Trail deleted.");
-                    loadTrail();
+                });
+            });
+
+
+
+            //======================Map Segment=========================
+            //Default map center and coordinate
+            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
+            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
+
+            //Create map
+            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
+            L.control.attribution({ prefix: false }).addTo(map);
+
+
+            //Add zIndex panes for enforcing order between layers
+            map.createPane("gridPane");
+            map.createPane("markerPane");
+            map.createPane("trailPane");
+            map.createPane("trailMarkerPane");
+
+            //Order priorities
+            map.getPane("trailMarkerPane").style.zIndex = 300;
+            map.getPane("gridPane").style.zIndex = 400;
+            map.getPane("markerPane").style.zIndex = 500;
+            map.getPane("trailPane").style.zIndex = 600;
+            
+            //Add layers to map
+            let gridLayerGroup;
+            window.gridLayerGroup = L.layerGroup({ pane: 'gridPane' }).addTo(map);
+
+            //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
+            let markersLayerGroup;
+            window.markersLayerGroup = L.markerClusterGroup({
+            iconCreateFunction: function (cluster) {
+                // Get all markers in this cluster
+                const markers = cluster.getAllChildMarkers();
+
+                // Compute aggregated call result statistics
+                let total = 0;
+                let fails = 0;
+
+                markers.forEach(marker => {
+                const callResultStr = marker.options.callResult || '[]';
+                let results = [];
+                try {
+                    results = JSON.parse(callResultStr);
+                } catch(e) {}
+
+                total += results.length;
+                fails += results.filter(r => r.toLowerCase() !== "ok").length;
+                });
+
+                const failRatio = total > 0 ? (fails / total) : 0;
+
+                // Determine color
+                let c = 'marker-cluster-small';  // default class
+                if (failRatio > 0.9) {
+                c = 'marker-cluster-large';  // red (will style below)
+                } else if (failRatio > 0.5) {
+                c = 'marker-cluster-medium'; // yellow
+                } else {
+                c = 'marker-cluster-small';  // green
+                }
+
+                return new L.DivIcon({
+                html: '<div><span>' + cluster.getChildCount() + '</span></div>',
+                className: 'marker-cluster ' + c,
+                iconSize: new L.Point(40, 40)
                 });
             }
+            }).addTo(map);  
+            
+            let trailLayerGroup;
+            window.trailLayerGroup = L.layerGroup({ pane: 'trailPane' }).addTo(map);
+
 
             
 
-            //================================================================
+            var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
+                minZoom: 0,
+                maxZoom: 22,
+                tms: false,
+                errorTileUrl: '/static/tiles/fallback.png',
+                attribution: 'Created by QGIS'
+            }).addTo(map);
+
+
+
+            //=======Functions to add layers to map=====================
+
+
+
             
 
 
+            
+            map.doubleClickZoom.disable();//Disable zoom on double click
 
-            map.doubleClickZoom.disable();
             map.on('dblclick', function (e) {
                 const lat = e.latlng.lat.toFixed(5);
                 const lng = e.latlng.lng.toFixed(5);
@@ -979,7 +987,6 @@
             });
 
             
-
             document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
                 if (this.checked) {
                     markersLayerGroup.addTo(map);
@@ -996,13 +1003,13 @@
                 }
             });
 
-        document.getElementById('toggleTrailLayer').addEventListener('change', function () {
-            if (this.checked) {
-                trailLayerGroup.addTo(map);
-            } else {
-                map.removeLayer(trailLayerGroup);
-            }
-        });
+            document.getElementById('toggleTrailLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    trailLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(trailLayerGroup);
+                }
+            });
 
 
             const drawnItems = new L.FeatureGroup().addTo(map);
@@ -1055,6 +1062,12 @@
                 }
             });
 
+            loadGridLayer();
+            loadMarkerLayer();
+            loadTrail();    
+
+        //================================================================
+        
         //================SEGMENT FOR MAIN PAGE MAP==================
         // Create simple main screen map
         const mainMap = L.map('mainMap', { attributionControl: false }).setView(savedCenter, savedZoom);
@@ -1306,14 +1319,10 @@
                 });
             }
 
-        loadMainMapTrail();
+            loadMainMapTrail();
 
         //===============================================================   
             
-
-            loadGridLayer();
-            loadMarkerLayer();
-            loadTrail();
     
             // Call fetchTableData immediately on load
             fetchTableData();
@@ -1326,9 +1335,6 @@
         });    
         //updateCallResult();
         //setInterval(updateCallResult, updateCallResultInterval);
-
-        
-
 
     </script>
 </body>

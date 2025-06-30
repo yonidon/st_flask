@@ -20,22 +20,21 @@ import json
 #Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
-#In gps add indicator if browser locaiton or simbox location
+#In gps add indicator if browser location or simbox location
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
 #Only one point can be marked
-#Merge start and stop button (Need to think about this)
 #Add option to stop automatically after x surveys (maybe field with survey counter)
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Add rssi layer to map
-#Add operator to tooltip of points instead of MCC/MNC
 #If no gps then gps of trail point be selected
-#Long click to set default location Instead of double click
 #how to check simbox battery
 #Split frontend files
 #Receive numbers should be saved on refresh
-
+#In trail location edit , set as default coordinate
+#Create json for global variables - session name, default location (Using trail), receiving goal, use browser location flag
+#Add field for prison name
 
 
 #======================================================
@@ -54,9 +53,8 @@ latest_json_data = {}  # Global variable to store the latest JSON data
 GRID_FACTOR=10
 GRID_SIZE_LAT = 0.00009*GRID_FACTOR
 GRID_SIZE_LON = 0.0001 *GRID_FACTOR
+
 #======================================================
-
-
 # Database configuration for remote connection
 DB_CONFIG_FILE = '/home/guard3/st_flask/db_config.ini'
 
