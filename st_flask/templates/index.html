@@ -977,6 +977,8 @@
                     form.default_longitude.value = data.default_longitude || '';
                     form.use_geolocation.checked = (data.use_geolocation === 'true');
                     });
+
+                    
                 }
 
                 document.getElementById('settingsForm').addEventListener('submit', function(e) {
@@ -1008,7 +1010,8 @@
                     loadSettings();
                     }
                 });
-                });
+
+            });
 
                 //When clicking on trail point it sets default location in database
                 function setAsDefaultLocation(lat, lon) {
@@ -1020,101 +1023,61 @@
                     .then(res => res.json())
                     .then(() => {
                         alert("Default location saved.");
+                        window.db_center = [parseFloat(lat), parseFloat(lon)];
+
+                            // Update marker position
+                            if (window.defaultLocationMarker) {
+                            window.defaultLocationMarker.setLatLng(window.db_center);
+                            } else {
+                            // If marker didn't exist, create it
+                            window.defaultLocationMarker = L.marker(window.db_center, { icon: defaultIcon })
+                                .addTo(window.map)
+                                .bindTooltip("Default Location", { direction: 'top' });
+                            }
 
                         // Optionally update savedCenter immediately
                         //savedCenter = [parseFloat(lat), parseFloat(lon)];
                     });
+
+                    
                 }
 
-
+                
        
-
-
-        //Things that happen after page content is loaded
-        document.addEventListener('DOMContentLoaded', function () {
-
-            //On page load, load advanced/simple state
-           const savedMode = localStorage.getItem('mode');
-                if (savedMode === 'advanced') {
-                    document.body.classList.add('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+            //Functions to toggle layers on map
+            document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    markersLayerGroup.addTo(map);
                 } else {
-                    document.body.classList.remove('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
-            }   
+                    map.removeLayer(markersLayerGroup);
+                }
+            });
 
-            // On page load, always load latest modem state once
-            fetch('/latest_json')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.senders && Object.keys(data.senders).length > 0) {
-                        updateModemStatus(data);
-                    }
-                    updateStatusIndicators(data);  // <-- also update status indicators immediately
-                });
+            document.getElementById('toggleGridLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    gridLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(gridLayerGroup);
+                }
+            });
 
-            
-            //Update if script is started or stopped
-            updateStatusIndicators();
-            updateMessageCounterDisplay();
-            
-            // Tab switching logic
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabPanels = document.querySelectorAll('.tab-panel');
-
-            // Restore last tab from localStorage, or default to 'main-tab'
-            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
-
-            // Activate the stored/default tab
-            function activateTab(tabId) {
-                tabButtons.forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.tab === tabId);
-                });
-
-                tabPanels.forEach(panel => {
-                    panel.classList.toggle('active', panel.id === tabId);
-                });
-            }
-
-            // Set initial tab
-            activateTab(lastTabId);
-
-            // Set click handlers
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const tabId = button.dataset.tab;
-                    activateTab(tabId);
-                    localStorage.setItem('activeTab', tabId); // Save to storage
-
-                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
-                        if (tabId === 'map-tab') {
-                        setTimeout(() => {
-                            map.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-                    // For main tab too
-                        if (tabId === 'main-tab') {
-                        setTimeout(() => {
-                            mainMap.invalidateSize();
-                        }, 100);  // slight delay ensures panel is visible
-                    }
-
-
-
-                });
+            document.getElementById('toggleTrailLayer').addEventListener('change', function () {
+                if (this.checked) {
+                    trailLayerGroup.addTo(map);
+                } else {
+                    map.removeLayer(trailLayerGroup);
+                }
             });
 
 
+            //Function to create the map in map tab
+            function initMap() {
 
-
-
-            //======================Map tab Segment=========================
-            //Default map center and coordinate
-            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') || '[32.0853, 34.7818]');
+            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') ||  '[32.0853, 34.7818]');
             const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
 
             //Create map
-            const map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
+            window.map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
             L.control.attribution({ prefix: false }).addTo(map);
 
 
@@ -1203,34 +1166,11 @@
                 }
             });
 
-            //Functions to toggle layers on map
-            document.getElementById('toggleMarkersLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    markersLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(markersLayerGroup);
-                }
-            });
 
-            document.getElementById('toggleGridLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    gridLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(gridLayerGroup);
-                }
-            });
 
-            document.getElementById('toggleTrailLayer').addEventListener('change', function () {
-                if (this.checked) {
-                    trailLayerGroup.addTo(map);
-                } else {
-                    map.removeLayer(trailLayerGroup);
-                }
-            });
+            window.drawnItems = new L.FeatureGroup().addTo(map);
 
-            const drawnItems = new L.FeatureGroup().addTo(map);
-
-            const drawControl = new L.Control.Draw({
+            window.drawControl = new L.Control.Draw({
                 edit: {
                     featureGroup: drawnItems
                 },
@@ -1278,15 +1218,18 @@
                 }
             });
 
+
+            
+
             loadGridLayer();
             loadMarkerLayer();
             loadTrail();    
 
-        //================================================================
-        
-        //================SEGMENT FOR MAIN PAGE MAP==================
+
+
+        //================SEGMENT FOR MAIN PAGE MAP==================    
         // Create simple main screen map
-        const mainMap = L.map('mainMap', { attributionControl: false }).setView(savedCenter, savedZoom);
+        window.mainMap = L.map('mainMap', { attributionControl: false }).setView(savedCenter, savedZoom);
         L.control.attribution({ prefix: false }).addTo(mainMap);
 
         // Add only trailPane to this map
@@ -1406,14 +1349,146 @@
         });
 
 
-        //Load trail in main map
-        loadMainMapTrail();
+            //Load trail in main map
+            loadMainMapTrail();
 
-        //===============================================================   
+            //==========Segment for adding default location icon===========
+            // Create red pin icon (FontAwesome or default)
+            const defaultIcon = L.divIcon({
+            html: '<i class="fas fa-map-marker-alt fa-2x" style="color: red;"></i>',
+            className: '',
+            iconSize: [24, 24],
+            iconAnchor: [12, 24]
+            });
+
+            // Create the marker
+            window.defaultLocationMarker = L.marker(window.db_center, { icon: defaultIcon })
+            .addTo(window.map,window.mainMap)
+            .bindTooltip("Default Location", { direction: 'top' })
+
+            console.log("DB_CENTER=",window.db_center);
+
+
+        }
+
+
+            //Get default location from settings
+            function initDefaultLocation() {
+                fetch('/get_settings')
+                    .then(res => res.json())
+                    .then(settings => {
+                    let lat = parseFloat(settings.default_latitude || "32.1");
+                    let lon = parseFloat(settings.default_longitude || "34.8");
+                    window.db_center = [lat, lon];
+                    console.log("db_center initialized =", window.db_center);
+                          
+                    initMap();
+                    });
+            }  
+
+        //Things that happen after page content is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+
             
-    
+
+
+            //Default map center and coordinate
+            const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') ||  '[32.0853, 34.7818]');
+            const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10)
+
+            //Load settings on page load . This also initializes the map.
+            initDefaultLocation();
+
+
+            //On page load, load advanced/simple state
+           const savedMode = localStorage.getItem('mode');
+                if (savedMode === 'advanced') {
+                    document.body.classList.add('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+                } else {
+                    document.body.classList.remove('advanced-mode');
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+            }   
+
+            // On page load, always load latest modem state once
+            fetch('/latest_json')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.senders && Object.keys(data.senders).length > 0) {
+                        updateModemStatus(data);
+                    }
+                    updateStatusIndicators(data);  // <-- also update status indicators immediately
+                });
+
+            
+            //Update if script is started or stopped
+            updateStatusIndicators();
+            updateMessageCounterDisplay();
+            
+            // Tab switching logic
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabPanels = document.querySelectorAll('.tab-panel');
+
+            // Restore last tab from localStorage, or default to 'main-tab'
+            const lastTabId = localStorage.getItem('activeTab') || 'main-tab';
+
+            // Activate the stored/default tab
+            function activateTab(tabId) {
+                tabButtons.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.tab === tabId);
+                });
+
+                tabPanels.forEach(panel => {
+                    panel.classList.toggle('active', panel.id === tabId);
+                });
+            }
+
+            // Set initial tab
+            activateTab(lastTabId);
+
+            // Set click handlers
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    activateTab(tabId);
+                    localStorage.setItem('activeTab', tabId); // Save to storage
+
+                    // ✅ When activating map tab, force map resize.This is to fix error that maps act funny
+                        if (tabId === 'map-tab') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+                    // For main tab too
+                        if (tabId === 'main-tab') {
+                        setTimeout(() => {
+                            mainMap.invalidateSize();
+                        }, 100);  // slight delay ensures panel is visible
+                    }
+
+
+
+                });
+            });
+
+
+
+
+
+            //======================Map tab Segment=========================
+
+
+;
+
+
+        //================================================================
+        
+      
+               
             // Call fetchTableData immediately on load
             fetchTableData();
+
+
 
             // Start fetchData interval
             fetchData(); // Call once immediately
