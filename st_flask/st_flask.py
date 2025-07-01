@@ -180,7 +180,8 @@ def init_db():
                 INDEX idx_timestamp (TIMESTAMP),
                 LATITUDE DECIMAL(13,5),
                 LONGITUDE DECIMAL(11,5),
-                ALTITUDE  DECIMAL(6,1)   
+                ALTITUDE  DECIMAL(6,1),
+                SESSION_NAME VARCHAR(255)   
             )
         ''')
         #Table for grid
@@ -246,6 +247,8 @@ def insert_modem_data(modem_number, modem_data,gps_location):
         print("Failed to get GPS")
         latitude, longitude, altitude = None, None, None
 
+    session_name = get_setting("session_name") or ""
+
 
     # Normalize call_result values to only "OK" or "FAIL"
     call_results = modem_data['survey_results'].get('call_result', [])
@@ -269,8 +272,8 @@ def insert_modem_data(modem_number, modem_data,gps_location):
             MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, MSISDN, SENT, MODEM_INDEX_I2C,
             TIMESTAMP, NETWORK, USE_CALL, USE_SMS, IS_LOOPBACK_MSISDN, MODEM_MSISDN, MODEL, IMEI,
             IMSI, REGISTRATION_STATUS, OPERATOR, RAT, ARFCN, BSIC, PSC, PCI, MCC,
-            MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, SMS_RESULT, LATITUDE, LONGITUDE, ALTITUDE
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, SMS_RESULT, LATITUDE, LONGITUDE, ALTITUDE,SESSION_NAME 
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ''', (
         modem_number, modem_data['status'], modem_data['error'], modem_data['error_code'],
         modem_data['msisdn'], modem_data['sent'], modem_data['modem_index_i2c'], readable_timestamp,
@@ -286,7 +289,8 @@ def insert_modem_data(modem_number, modem_data,gps_location):
         json.dumps(modem_data['survey_results']['call_result']), modem_data['survey_results']['sms_result'],
         latitude, 
         longitude, 
-        altitude 
+        altitude,
+        session_name 
     ))
     
 
@@ -545,7 +549,7 @@ def fetch_table_data():
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('''
-            SELECT ID, MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, 
+            SELECT ID,SESSION_NAME, MODEM_NUMBER, STATUS, ERROR, ERROR_CODE, 
             TIMESTAMP, NETWORK, MODEM_MSISDN, MODEL, IMEI,
             IMSI, REGISTRATION_STATUS, OPERATOR, RAT, ARFCN, BSIC, PSC, PCI, MCC,
             MNC, LAC, CELL_ID, RSSI, SNR, CALL_RESULT, LATITUDE, LONGITUDE, ALTITUDE
@@ -625,7 +629,7 @@ def modem_locations():
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
         cursor.execute('''
-            SELECT LATITUDE, LONGITUDE, RSSI, OPERATOR, LAC, CELL_ID, CALL_RESULT, ARFCN, PCI, TIMESTAMP
+            SELECT LATITUDE, LONGITUDE, RSSI, OPERATOR, LAC, CELL_ID, CALL_RESULT, ARFCN, PCI, TIMESTAMP, SESSION_NAME
             FROM TBL_ST_SIMBOX_EVENTS 
             WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL
             ORDER BY ID DESC
