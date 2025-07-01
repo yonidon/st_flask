@@ -34,6 +34,8 @@ import json
 #Check calls in airplane mode
 #Bug - when changing default location it won't refresh map
 #If script stops sending messages then set back to unknown
+#Bad gateway in wifi?
+#Add session column
 
 
 #======================================================

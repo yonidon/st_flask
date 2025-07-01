@@ -616,6 +616,7 @@
                     .then(result => {
                         alert("Description updated.");
                         loadTrail(); // Reload to reflect changes
+                        loadMainMapTrail();
                     });
                 }
             }
@@ -1157,7 +1158,7 @@
                 minZoom: 0,
                 maxZoom: 22,
                 tms: false,
-                errorTileUrl: '/static/tiles/fallback.png',
+                errorTileUrl: '/static/fallback.png',
                 attribution: 'Created by QGIS'
             }).addTo(map);
  
@@ -1253,7 +1254,7 @@
             minZoom: 0,
             maxZoom: 22,
             tms: false,
-            errorTileUrl: '/static/tiles/fallback.png'
+            errorTileUrl: '/static/fallback.png'
         }).addTo(mainMap);
 
         //Add trail layer to map
