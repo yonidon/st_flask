@@ -1034,11 +1034,9 @@
                                 .addTo(window.map)
                                 .bindTooltip("Default Location", { direction: 'top' });
                             }
-
                         // Optionally update savedCenter immediately
                         //savedCenter = [parseFloat(lat), parseFloat(lon)];
                     });
-
                     
                 }
 
@@ -1355,16 +1353,26 @@
             //==========Segment for adding default location icon===========
             // Create red pin icon (FontAwesome or default)
             const defaultIcon = L.divIcon({
-            html: '<i class="fas fa-map-marker-alt fa-2x" style="color: red;"></i>',
+            html: '<i class="fas fa-map-marker-alt fa-3x" style="color: red; text-shadow: 0 0 5px black;"></i>',
             className: '',
             iconSize: [24, 24],
             iconAnchor: [12, 24]
             });
 
+            window.map.createPane("defaultMarkerPane");
+            window.map.getPane("defaultMarkerPane").style.zIndex = 900;
+            window.mainMap.createPane("defaultMarkerPane");
+            window.mainMap.getPane("defaultMarkerPane").style.zIndex = 900;
+
             // Create the marker
-            window.defaultLocationMarker = L.marker(window.db_center, { icon: defaultIcon })
-            .addTo(window.map,window.mainMap)
-            .bindTooltip("Default Location", { direction: 'top' })
+            window.defaultLocationMarker = L.marker(window.db_center, { icon: defaultIcon , pane: "defaultMarkerPane", interactive: false})
+            .addTo(window.map)
+            .bindTooltip("Default Location", { direction: 'bottom' });
+
+            window.defaultLocationMarkerMain = L.marker(window.db_center, { icon: defaultIcon , pane: "defaultMarkerPane", interactive: false})
+            .addTo(window.mainMap)
+            .bindTooltip("Default Location", { direction: 'bottom' });
+
 
             console.log("DB_CENTER=",window.db_center);
 
@@ -1373,25 +1381,23 @@
 
 
             //Get default location from settings
-            function initDefaultLocation() {
-                fetch('/get_settings')
-                    .then(res => res.json())
-                    .then(settings => {
-                    let lat = parseFloat(settings.default_latitude || "32.1");
-                    let lon = parseFloat(settings.default_longitude || "34.8");
-                    window.db_center = [lat, lon];
-                    console.log("db_center initialized =", window.db_center);
-                          
-                    initMap();
-                    });
-            }  
+        function initDefaultLocation() {
+            fetch('/get_settings')
+                .then(res => res.json())
+                .then(settings => {
+                let lat = parseFloat(settings.default_latitude || "32.1");
+                let lon = parseFloat(settings.default_longitude || "34.8");
+                window.db_center = [lat, lon];
+                console.log("db_center initialized =", window.db_center);
+                
+                initMap();//Initialize the map
+                });
+        }  
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
 
             
-
-
             //Default map center and coordinate
             const savedCenter = JSON.parse(localStorage.getItem('defaultMapCenter') ||  '[32.0853, 34.7818]');
             const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10)
@@ -1471,26 +1477,11 @@
                 });
             });
 
-
-
-
-
-            //======================Map tab Segment=========================
-
-
-;
-
-
-        //================================================================
-        
-      
                
-            // Call fetchTableData immediately on load
+            // Call fetchTableData immediately on load (This is for db table tab)
             fetchTableData();
 
-
-
-            // Start fetchData interval
+            // Start fetchData interval (This is for receiving modem data)
             fetchData(); // Call once immediately
             setInterval(fetchData, fetchDataInterval); // Call repeatedly every second
 

@@ -19,7 +19,7 @@ import json
 #Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
-#In gps add indicator if browser location or simbox location
+#In gps add indicator if browser location or simbox location (Maybe in modems-tab)
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
 #Only one point can be marked
@@ -27,15 +27,12 @@ import json
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Add rssi layer to map
-#If no gps then gps of trail point be selected
 #how to check simbox battery
 #Split frontend files
 #Receive numbers should be saved on refresh
-#In trail location edit , set as default coordinate
-#Create json for global variables - session name, default location (Using trail), receiving goal, use browser location flag
 #Add field for prison name in table
-#Fix checkboxes of layers
 #Check calls in airplane mode
+#Bug - when changing default location it won't refresh map
 
 
 #======================================================
