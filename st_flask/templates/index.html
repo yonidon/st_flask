@@ -1032,8 +1032,20 @@
                             // If marker didn't exist, create it
                             window.defaultLocationMarker = L.marker(window.db_center, { icon: defaultIcon })
                                 .addTo(window.map)
-                                .bindTooltip("Default Location", { direction: 'top' });
+                                .bindTooltip("Default Location", { direction: 'bottom' });
                             }
+                                // Update or create marker on mainMap
+                            if (window.defaultLocationMarkerMain) {
+                            window.defaultLocationMarkerMain.setLatLng(window.db_center);
+                            } else {
+                            window.defaultLocationMarkerMain = L.marker(window.db_center, {
+                                icon: defaultIcon,
+                                interactive: false
+                            })
+                            .addTo(window.mainMap)
+                            .bindTooltip("Default Location", { direction: 'bottom' });
+                            }
+                            
                         // Optionally update savedCenter immediately
                         //savedCenter = [parseFloat(lat), parseFloat(lon)];
                     });
