@@ -1,0 +1,18 @@
+[Unit]
+Description=ST Flask service
+After=network.target
+RequiresMountsFor=/
+
+[Service]
+WorkingDirectory=/home/guard3/st_flask
+ExecStartPre=
+ExecStart=/bin/sh -c 'exec python3 ./st_flask.py >> /var/log/st_flask.log 2>&1'
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+KillMode=process
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# This service file runs ST Flask

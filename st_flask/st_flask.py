@@ -23,7 +23,7 @@ import json
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
 #Only one point can be marked
-#Add option to stop automatically after x surveys (maybe field with survey counter)
+#Add option to stop automatically after x surveys (maybe in settings)
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Add rssi layer to map
@@ -33,9 +33,10 @@ import json
 #Add field for prison name in table
 #Check calls in airplane mode
 #Bug - when changing default location it won't refresh map
-#If script stops sending messages then set back to unknown
-#Bad gateway in wifi?
-#Add session column
+#If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
+#Make the tooltip the upper layer
+#Export by filter?
+
 
 
 #======================================================

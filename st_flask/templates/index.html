@@ -203,6 +203,7 @@
 
     <script>
 
+        window.MAX_ZOOM=19;
         let messageCounter = 0;//Number of messages with non-empty "senders" segment
         //Text for main header
         new Typed('#animatedHeader', {
@@ -1088,7 +1089,7 @@
             const savedZoom = parseInt(localStorage.getItem('defaultMapZoom') || '10', 10);
 
             //Create map
-            window.map = L.map('map', { attributionControl: false , maxZoom: 22}).setView(savedCenter, savedZoom);
+            window.map = L.map('map', { attributionControl: false , maxZoom: MAX_ZOOM}).setView(savedCenter, savedZoom);
             L.control.attribution({ prefix: false }).addTo(map);
 
 
@@ -1156,7 +1157,7 @@
 
             var tilesource_layer = L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
                 minZoom: 0,
-                maxZoom: 22,
+                maxZoom: MAX_ZOOM,
                 tms: false,
                 errorTileUrl: '/static/fallback.png',
                 attribution: 'Created by QGIS'
@@ -1252,7 +1253,7 @@
 
         L.tileLayer('/static/tiles/{z}/{x}/{y}.png', {
             minZoom: 0,
-            maxZoom: 22,
+            maxZoom: MAX_ZOOM,
             tms: false,
             errorTileUrl: '/static/fallback.png'
         }).addTo(mainMap);
