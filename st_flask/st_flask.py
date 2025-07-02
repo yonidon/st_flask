@@ -30,9 +30,6 @@ import json
 #how to check simbox battery
 #Split frontend files
 #Receive numbers should be saved on refresh
-#Add field for prison name in table
-#Check calls in airplane mode
-#Bug - when changing default location it won't refresh map
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
 #Make the tooltip the upper layer
 #Export by filter?

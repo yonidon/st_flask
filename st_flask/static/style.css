@@ -715,4 +715,53 @@ body.advanced-mode .tab-panel-container .tab-panel.active {
 
 
 
+/*Segment for map lock checkbox*/
+.map-lock-container {
+  margin: 10px 0;
+}
 
+.lock-toggle {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #ddd;
+  user-select: none;
+}
+
+.lock-toggle input {
+  display: none;
+}
+
+/* Custom checkbox */
+.lock-toggle .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #555;
+  border-radius: 3px;
+  margin-right: 8px;
+  position: relative;
+  background-color: #222;
+}
+
+.lock-toggle input:checked + .checkmark {
+  background-color: #3a5ba0;
+  border-color: #3a5ba0;
+}
+
+.lock-toggle .checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.lock-toggle input:checked + .checkmark::after {
+  display: block;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}

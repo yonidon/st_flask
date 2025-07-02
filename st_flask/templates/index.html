@@ -92,6 +92,14 @@
             <span id="messageCounter">Received: <span id="messageCounterValue" class="badge">0</span></span>
 
         </div>
+        <div class="map-lock-container">
+        <label class="lock-toggle">
+            <input type="checkbox" id="lockMapCheckbox">
+            <span class="checkmark"></span>
+            Lock Map
+        </label>
+        </div>
+
         <div id="mainMap" style="height: 400px; border-radius: 8px; margin-top: 20px;"></div>
     </div>
 
@@ -1405,8 +1413,44 @@
                 console.log("db_center initialized =", window.db_center);
                 
                 initMap();//Initialize the map
+
+                const lockState = localStorage.getItem('mapLock') === 'true';
+                const checkbox = document.getElementById('lockMapCheckbox');
+                checkbox.checked = lockState;
+                setMapLockState(lockState);
+
+                checkbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                setMapLockState(isChecked);
+                localStorage.setItem('mapLock', isChecked);
+                });
+
                 });
         }  
+
+
+
+        // Lock/unlock mainMap
+        function setMapLockState(locked) {
+        if (locked) {
+            //window.mainMap._container.title = "Map is locked.";
+            window.mainMap.dragging.disable();
+            window.mainMap.scrollWheelZoom.disable();
+            window.mainMap.doubleClickZoom.disable();
+            window.mainMap.boxZoom.disable();
+            window.mainMap.keyboard.disable();
+            // Optionally disable touch zoom:
+            if (window.mainMap.tap) window.mainMap.tap.disable();
+        } else {
+            //window.mainMap._container.title = "";
+            window.mainMap.dragging.enable();
+            window.mainMap.scrollWheelZoom.enable();
+            window.mainMap.doubleClickZoom.enable();
+            window.mainMap.boxZoom.enable();
+            window.mainMap.keyboard.enable();
+            if (window.mainMap.tap) window.mainMap.tap.enable();
+        }
+        }
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
@@ -1418,6 +1462,8 @@
 
             //Load settings on page load . This also initializes the map.
             initDefaultLocation();
+
+            // Then set the lock state
 
 
             //On page load, load advanced/simple state
