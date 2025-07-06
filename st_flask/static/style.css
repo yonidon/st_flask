@@ -765,3 +765,12 @@ body.advanced-mode .tab-panel-container .tab-panel.active {
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
+
+/*Style for rssi layer*/
+.leaflet-tooltip.rssi-label {
+  background: none;
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 0 3px black;
+}

@@ -35,8 +35,8 @@
     <script src="{{ url_for('static', filename='leaflet.markercluster.js') }}"></script>
 
 
-    
 
+    
 
 
 
@@ -172,6 +172,7 @@
             <label><input type="checkbox" id="toggleMarkersLayer" checked> Show Markers Layer</label>
             <label><input type="checkbox" id="toggleGridLayer" checked> Show Grid Layer</label>
             <label><input type="checkbox" id="toggleTrailLayer" checked> Show Trail</label>
+            <label><input type="checkbox" id="toggleRssiLayer" checked> Show RSSI layer</label>
         </div>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
     </div>
@@ -489,6 +490,7 @@
                 .then(res => res.json())
                 .then(result => {
                     alert("Grid table cleared.");
+                    loadRssiLayer();
                     loadGridLayer();
                 });
             }
@@ -500,6 +502,7 @@
                 .then(res => res.json())
                 .then(result => {
                     alert("Grid recalculation complete.");
+                    loadRssiLayer();
                     loadGridLayer();
                 });
             }
@@ -775,6 +778,54 @@
                 });
                 
             }
+
+function loadRssiLayer() {
+  fetch('/rssi_grid')
+    .then(res => res.json())
+    .then(data => {
+      window.rssiLayerGroup.clearLayers();
+
+      data.forEach(item => {
+        const lat = (item.LAT_MIN + item.LAT_MAX) / 2;
+        const lon = (item.LON_MIN + item.LON_MAX) / 2;
+        const avgRssi = item.RSSI_SUM / item.TOTAL_POINTS;
+
+        // Color: green for good RSSI, red for poor
+        let color = 'green';
+        if (avgRssi < -100) color = 'red';
+        else if (avgRssi < -85) color = 'orange';
+        else if (avgRssi < -70) color = 'yellow';
+
+        // CircleMarker with more opacity blending
+        const marker = L.circleMarker([lat, lon], {
+            radius: 25,
+            fillColor: color,
+            fillOpacity: 0.25,
+            color: color,
+            opacity: 0.1,     // thin border halo
+            weight: 8,
+            pane: 'rssiPane'
+        }).addTo(window.rssiLayerGroup);
+
+        // Label in center
+        marker.bindTooltip(
+          `RSSI: ${avgRssi.toFixed(1)} dBm`,
+          { 
+            permanent: true, 
+            direction: 'center', 
+            className: 'rssi-label' 
+          }
+        );
+      });
+    });
+}
+
+
+
+
+
+
+
 
             // Load markers
             function loadMarkerLayer() {
@@ -1088,6 +1139,17 @@
                     map.removeLayer(trailLayerGroup);
                 }
             });
+            document.getElementById('toggleRssiLayer').addEventListener('change', function() {
+            if (this.checked) {
+                window.rssiLayerGroup.addTo(window.map);
+            } else {
+                window.map.removeLayer(window.rssiLayerGroup);
+            }
+            });
+
+
+
+
 
 
             //Function to create the map in map tab
@@ -1106,16 +1168,25 @@
             map.createPane("markerPane");
             map.createPane("trailPane");
             map.createPane("trailMarkerPane");
+            map.createPane('rssiPane');
+
+
 
             //Order priorities
             map.getPane("trailMarkerPane").style.zIndex = 300;
             map.getPane("gridPane").style.zIndex = 400;
             map.getPane("markerPane").style.zIndex = 500;
             map.getPane("trailPane").style.zIndex = 600;
+            map.getPane('rssiPane').style.zIndex = 200;
             
             //Add layers to map
             let gridLayerGroup;
             window.gridLayerGroup = L.layerGroup({ pane: 'gridPane' }).addTo(map);
+
+            let rssiLayerGroup;    
+            window.rssiLayerGroup = L.layerGroup({ pane: 'rssiPane' }).addTo(window.map);
+
+
 
             //let markersLayerGroup = L.layerGroup().addTo(map); original marker layers, instead of cluster
             let markersLayerGroup;
@@ -1242,6 +1313,7 @@
             
 
             loadGridLayer();
+            loadRssiLayer();
             loadMarkerLayer();
             loadTrail();    
 
@@ -1414,6 +1486,7 @@
                 
                 initMap();//Initialize the map
 
+                //Initialize lock checkbox of map in main tab
                 const lockState = localStorage.getItem('mapLock') === 'true';
                 const checkbox = document.getElementById('lockMapCheckbox');
                 checkbox.checked = lockState;

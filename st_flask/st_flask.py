@@ -15,7 +15,6 @@ import json
 #update_avg_table creates overlapping squares. recalculate_grid works fine
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
 #If importing and duplicate primary key then need to raise exception
-#Add option to lock map
 #Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
@@ -33,6 +32,7 @@ import json
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
 #Make the tooltip the upper layer
 #Export by filter?
+#Clean latest json after receiving it
 
 
 
@@ -215,6 +215,19 @@ def init_db():
                 ID INT AUTO_INCREMENT PRIMARY KEY,
                 CONFIG_KEY VARCHAR(64) UNIQUE,
                 CONFIG_VALUE TEXT
+            )
+        ''')
+        
+        #Table for rssi average
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS TBL_ST_SIMBOX_RSSI_AVG (
+                ID INT AUTO_INCREMENT PRIMARY KEY,
+                LAT_MIN DECIMAL(10,6),
+                LAT_MAX DECIMAL(10,6),
+                LON_MIN DECIMAL(10,6),
+                LON_MAX DECIMAL(10,6),
+                TOTAL_POINTS INT,
+                RSSI_SUM FLOAT
             )
         ''')
         conn.commit()
@@ -502,6 +515,70 @@ def recalculate_grid_table():
     cursor.close()
     conn.close()
 
+#Recalculate rssi layer
+def recalculate_rssi_table():
+    lat_size, lon_size = GRID_SIZE_LAT, GRID_SIZE_LON
+
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+
+    # Clear existing data
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_RSSI_AVG')
+    conn.commit()
+
+    # Fetch all events with RSSI
+    cursor.execute('SELECT LATITUDE, LONGITUDE, RSSI FROM TBL_ST_SIMBOX_EVENTS WHERE LATITUDE IS NOT NULL AND LONGITUDE IS NOT NULL AND RSSI IS NOT NULL AND RSSI != ""')
+    rows = cursor.fetchall()
+
+    grid = {}
+
+    for row in rows:
+        lat = float(row['LATITUDE'])
+        lon = float(row['LONGITUDE'])
+        try:
+            rssi_value = float(row['RSSI'])
+        except ValueError:
+            continue  # skip bad data
+
+        lat_min = math.floor(lat / lat_size) * lat_size
+        lat_max = lat_min + lat_size
+        lon_min = math.floor(lon / lon_size) * lon_size
+        lon_max = lon_min + lon_size
+
+        key = (lat_min, lon_min)
+
+        if key not in grid:
+            grid[key] = {
+                'LAT_MIN': lat_min,
+                'LAT_MAX': lat_max,
+                'LON_MIN': lon_min,
+                'LON_MAX': lon_max,
+                'TOTAL_POINTS': 0,
+                'RSSI_SUM': 0
+            }
+
+        grid[key]['TOTAL_POINTS'] += 1
+        grid[key]['RSSI_SUM'] += rssi_value
+
+    insert_query = '''
+        INSERT INTO TBL_ST_SIMBOX_RSSI_AVG
+        (LAT_MIN, LAT_MAX, LON_MIN, LON_MAX, TOTAL_POINTS, RSSI_SUM)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    '''
+
+    for square in grid.values():
+        cursor.execute(insert_query, (
+            square['LAT_MIN'],
+            square['LAT_MAX'],
+            square['LON_MIN'],
+            square['LON_MAX'],
+            square['TOTAL_POINTS'],
+            square['RSSI_SUM']
+        ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
@@ -720,6 +797,7 @@ def clear_grid_table():
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM TBL_ST_SIMBOX_AVG')
+    cursor.execute('DELETE FROM TBL_ST_SIMBOX_RSSI_AVG')
     conn.commit()
     cursor.close()
     conn.close()
@@ -728,7 +806,20 @@ def clear_grid_table():
 @app.route('/recalculate_grid', methods=['POST'])
 def recalculate_grid():
     recalculate_grid_table()
+    recalculate_rssi_table()
     return jsonify({'status': 'recalculated'})
+
+
+@app.route('/rssi_grid')
+def get_rssi_grid():
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM TBL_ST_SIMBOX_RSSI_AVG')
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(rows)
+
 
 #============================================================
 
@@ -837,6 +928,9 @@ def update_marker_status():
     finally:
         cursor.close()
         conn.close()
+
+
+
 
 
 #============================================================

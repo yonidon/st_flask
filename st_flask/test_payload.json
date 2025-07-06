@@ -1,6 +1,6 @@
 {
   "simbox_name": "PC",
-  "gps_location": "32.098311,34.845678,46.3",
+  "gps_location": "32.08775,34.8416,41.0",
   "psms_name": "PSMS",
   "status": "IDLE",
   "senders": {
@@ -11,7 +11,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 1,
-      "ts": 1751379735.638985,
+      "ts": 1751797903.731146,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -19,28 +19,27 @@
       "modem_msisdn": "+56912345601",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068582707",
-        "imsi": "730011455846276",
-        "registration_status": "3",
+        "imei": "867929068571159",
+        "imsi": "730011455843210",
+        "registration_status": "5",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9581",
+        "arfcn": "9373",
         "bsic": "",
         "psc": "",
-        "pci": "23",
+        "pci": "91",
         "mcc": "730",
         "mnc": "02",
-        "lac": "1904",
-        "cell_id": "382533",
-        "rssi": "-60",
-        "snr": "-12",
+        "lac": "5774",
+        "cell_id": "293119",
+        "rssi": "-39",
+        "snr": "-6",
         "call_result": [
           "OK",
-          "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.086695,34.843553,45.3"
+        "gps_location": "32.098845,34.840136,40.1"
       }
     },
     "2": {
@@ -50,7 +49,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 2,
-      "ts": 1751379735.639002,
+      "ts": 1751797903.73117,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -58,27 +57,28 @@
       "modem_msisdn": "+56912345602",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068517936",
-        "imsi": "730011455841137",
-        "registration_status": "3",
+        "imei": "867929068542776",
+        "imsi": "730011455847317",
+        "registration_status": "1",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9730",
+        "arfcn": "9017",
         "bsic": "",
         "psc": "",
-        "pci": "95",
+        "pci": "26",
         "mcc": "730",
         "mnc": "02",
-        "lac": "5786",
-        "cell_id": "152138",
-        "rssi": "-80",
-        "snr": "-3",
+        "lac": "8627",
+        "cell_id": "945030",
+        "rssi": "-37",
+        "snr": "-16",
         "call_result": [
+          "OK",
           "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.092481,34.841221,44.3"
+        "gps_location": "32.093016,34.84523,44.0"
       }
     },
     "3": {
@@ -88,7 +88,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 3,
-      "ts": 1751379735.639015,
+      "ts": 1751797903.7311866,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -96,27 +96,28 @@
       "modem_msisdn": "+56912345603",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068550258",
-        "imsi": "730011455849622",
-        "registration_status": "3",
+        "imei": "867929068555028",
+        "imsi": "730011455841305",
+        "registration_status": "1",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9572",
+        "arfcn": "9692",
         "bsic": "",
         "psc": "",
         "pci": "92",
         "mcc": "730",
         "mnc": "02",
-        "lac": "5050",
-        "cell_id": "638790",
-        "rssi": "-59",
-        "snr": "-3",
+        "lac": "1790",
+        "cell_id": "839181",
+        "rssi": "-38",
+        "snr": "-6",
         "call_result": [
           "OK",
-          "OK"
+          "failed_timeout",
+          "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.088506,34.848212,43.4"
+        "gps_location": "32.086316,34.859459,40.8"
       }
     },
     "4": {
@@ -126,7 +127,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 4,
-      "ts": 1751379735.6390266,
+      "ts": 1751797903.7312026,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -134,27 +135,28 @@
       "modem_msisdn": "+56912345604",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068595348",
-        "imsi": "730011455843509",
+        "imei": "867929068582521",
+        "imsi": "730011455849258",
         "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9910",
+        "arfcn": "9116",
         "bsic": "",
         "psc": "",
-        "pci": "29",
+        "pci": "73",
         "mcc": "730",
         "mnc": "02",
-        "lac": "3604",
-        "cell_id": "121592",
-        "rssi": "-54",
-        "snr": "-7",
+        "lac": "6731",
+        "cell_id": "319773",
+        "rssi": "-35",
+        "snr": "-5",
         "call_result": [
+          "OK",
           "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.087786,34.858129,48.9"
+        "gps_location": "32.095636,34.844717,49.3"
       }
     },
     "5": {
@@ -164,7 +166,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 5,
-      "ts": 1751379735.6390378,
+      "ts": 1751797903.7312176,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -172,27 +174,27 @@
       "modem_msisdn": "+56912345605",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068526723",
-        "imsi": "730011455848714",
-        "registration_status": "3",
+        "imei": "867929068520656",
+        "imsi": "730011455847743",
+        "registration_status": "5",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9992",
+        "arfcn": "9353",
         "bsic": "",
         "psc": "",
-        "pci": "81",
+        "pci": "79",
         "mcc": "730",
         "mnc": "02",
-        "lac": "8711",
-        "cell_id": "917634",
-        "rssi": "-69",
-        "snr": "-9",
+        "lac": "8896",
+        "cell_id": "109123",
+        "rssi": "-31",
+        "snr": "-6",
         "call_result": [
-          "OK",
-          "OK"
+          "failed_timeout",
+          "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.092326,34.851292,40.1"
+        "gps_location": "32.099623,34.859988,44.0"
       }
     },
     "6": {
@@ -202,7 +204,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 6,
-      "ts": 1751379735.6390493,
+      "ts": 1751797903.731236,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -210,27 +212,27 @@
       "modem_msisdn": "+56912345606",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068524973",
-        "imsi": "730011455843014",
-        "registration_status": "1",
+        "imei": "867929068571469",
+        "imsi": "730011455848110",
+        "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9760",
+        "arfcn": "9297",
         "bsic": "",
         "psc": "",
-        "pci": "29",
+        "pci": "26",
         "mcc": "730",
         "mnc": "02",
-        "lac": "5281",
-        "cell_id": "208526",
-        "rssi": "-59",
-        "snr": "-15",
+        "lac": "7926",
+        "cell_id": "369380",
+        "rssi": "-37",
+        "snr": "-13",
         "call_result": [
           "OK",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.088693,34.851449,45.4"
+        "gps_location": "32.099233,34.845491,43.3"
       }
     },
     "7": {
@@ -240,7 +242,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 7,
-      "ts": 1751379735.6390657,
+      "ts": 1751797903.7312546,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -248,27 +250,27 @@
       "modem_msisdn": "+56912345607",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068591142",
-        "imsi": "730011455844651",
-        "registration_status": "1",
+        "imei": "867929068584506",
+        "imsi": "730011455843320",
+        "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9542",
+        "arfcn": "9994",
         "bsic": "",
         "psc": "",
-        "pci": "55",
+        "pci": "30",
         "mcc": "730",
         "mnc": "02",
-        "lac": "8159",
-        "cell_id": "778893",
-        "rssi": "-54",
-        "snr": "-10",
+        "lac": "3966",
+        "cell_id": "709398",
+        "rssi": "-40",
+        "snr": "-2",
         "call_result": [
           "OK",
-          "failed_timeout"
+          "OK"
         ],
         "sms_result": "",
-        "gps_location": "32.088039,34.843408,41.6"
+        "gps_location": "32.095981,34.856495,42.8"
       }
     },
     "8": {
@@ -278,7 +280,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 8,
-      "ts": 1751379735.6390777,
+      "ts": 1751797903.7312691,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -286,28 +288,28 @@
       "modem_msisdn": "+56912345608",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068527265",
-        "imsi": "730011455842343",
+        "imei": "867929068592550",
+        "imsi": "730011455844477",
         "registration_status": "1",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9440",
+        "arfcn": "9682",
         "bsic": "",
         "psc": "",
-        "pci": "72",
+        "pci": "45",
         "mcc": "730",
         "mnc": "02",
-        "lac": "6891",
-        "cell_id": "381644",
-        "rssi": "-75",
-        "snr": "-1",
+        "lac": "2324",
+        "cell_id": "950311",
+        "rssi": "-37",
+        "snr": "-15",
         "call_result": [
           "OK",
           "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.090157,34.85249,45.6"
+        "gps_location": "32.095287,34.843121,41.8"
       }
     },
     "9": {
@@ -317,7 +319,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 9,
-      "ts": 1751379735.639089,
+      "ts": 1751797903.7312841,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -325,27 +327,27 @@
       "modem_msisdn": "+56912345609",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068536023",
-        "imsi": "730011455844178",
-        "registration_status": "1",
+        "imei": "867929068526016",
+        "imsi": "730011455846811",
+        "registration_status": "5",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9343",
+        "arfcn": "9510",
         "bsic": "",
         "psc": "",
-        "pci": "17",
+        "pci": "36",
         "mcc": "730",
         "mnc": "02",
-        "lac": "2704",
-        "cell_id": "835575",
-        "rssi": "-72",
-        "snr": "-18",
+        "lac": "7294",
+        "cell_id": "163622",
+        "rssi": "-36",
+        "snr": "-17",
         "call_result": [
           "OK",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.090852,34.84165,42.2"
+        "gps_location": "32.098574,34.841687,45.6"
       }
     },
     "10": {
@@ -355,7 +357,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 10,
-      "ts": 1751379735.6391022,
+      "ts": 1751797903.7313015,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -363,28 +365,27 @@
       "modem_msisdn": "+56912345610",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068593474",
-        "imsi": "730011455844568",
-        "registration_status": "5",
+        "imei": "867929068533455",
+        "imsi": "730011455849083",
+        "registration_status": "1",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9476",
+        "arfcn": "9936",
         "bsic": "",
         "psc": "",
-        "pci": "18",
+        "pci": "26",
         "mcc": "730",
         "mnc": "02",
-        "lac": "8930",
-        "cell_id": "791928",
-        "rssi": "-63",
-        "snr": "-2",
+        "lac": "6320",
+        "cell_id": "794831",
+        "rssi": "-37",
+        "snr": "-9",
         "call_result": [
           "OK",
-          "failed_timeout",
-          "failed_timeout"
+          "OK"
         ],
         "sms_result": "",
-        "gps_location": "32.086265,34.857195,41.0"
+        "gps_location": "32.085116,34.854465,41.7"
       }
     },
     "11": {
@@ -394,7 +395,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 11,
-      "ts": 1751379735.6391277,
+      "ts": 1751797903.73132,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -402,28 +403,27 @@
       "modem_msisdn": "+56912345611",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068589162",
-        "imsi": "730011455848780",
-        "registration_status": "1",
+        "imei": "867929068564333",
+        "imsi": "730011455848530",
+        "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9850",
+        "arfcn": "9979",
         "bsic": "",
         "psc": "",
-        "pci": "53",
+        "pci": "15",
         "mcc": "730",
         "mnc": "02",
-        "lac": "9983",
-        "cell_id": "192824",
-        "rssi": "-77",
-        "snr": "-13",
+        "lac": "6461",
+        "cell_id": "46400",
+        "rssi": "-37",
+        "snr": "-6",
         "call_result": [
-          "OK",
           "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.098348,34.856722,43.2"
+        "gps_location": "32.096262,34.851867,40.8"
       }
     },
     "12": {
@@ -433,7 +433,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 12,
-      "ts": 1751379735.6391406,
+      "ts": 1751797903.7313347,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -441,28 +441,27 @@
       "modem_msisdn": "+56912345612",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068553712",
-        "imsi": "730011455849521",
+        "imei": "867929068520225",
+        "imsi": "730011455849267",
         "registration_status": "5",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9738",
+        "arfcn": "9818",
         "bsic": "",
         "psc": "",
-        "pci": "42",
+        "pci": "62",
         "mcc": "730",
         "mnc": "02",
-        "lac": "3732",
-        "cell_id": "437925",
-        "rssi": "-65",
-        "snr": "-3",
+        "lac": "1559",
+        "cell_id": "168536",
+        "rssi": "-39",
+        "snr": "0",
         "call_result": [
-          "OK",
           "failed_timeout",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.088779,34.854663,41.4"
+        "gps_location": "32.08528,34.849997,40.8"
       }
     },
     "13": {
@@ -472,7 +471,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 13,
-      "ts": 1751379735.6391535,
+      "ts": 1751797903.7313514,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -480,27 +479,27 @@
       "modem_msisdn": "+56912345613",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068540285",
-        "imsi": "730011455848972",
+        "imei": "867929068552183",
+        "imsi": "730011455845622",
         "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9624",
+        "arfcn": "9977",
         "bsic": "",
         "psc": "",
-        "pci": "60",
+        "pci": "11",
         "mcc": "730",
         "mnc": "02",
-        "lac": "3818",
-        "cell_id": "910361",
-        "rssi": "-53",
-        "snr": "-2",
+        "lac": "3491",
+        "cell_id": "192949",
+        "rssi": "-33",
+        "snr": "-5",
         "call_result": [
           "OK",
           "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.097206,34.851826,49.7"
+        "gps_location": "32.092881,34.843276,41.1"
       }
     },
     "14": {
@@ -510,7 +509,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 14,
-      "ts": 1751379735.639164,
+      "ts": 1751797903.731366,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -518,27 +517,27 @@
       "modem_msisdn": "+56912345614",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068545777",
-        "imsi": "730011455849656",
-        "registration_status": "5",
+        "imei": "867929068570596",
+        "imsi": "730011455849830",
+        "registration_status": "1",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9437",
+        "arfcn": "9515",
         "bsic": "",
         "psc": "",
         "pci": "95",
         "mcc": "730",
         "mnc": "02",
-        "lac": "9588",
-        "cell_id": "712724",
-        "rssi": "-74",
-        "snr": "-11",
+        "lac": "6559",
+        "cell_id": "384280",
+        "rssi": "-38",
+        "snr": "-16",
         "call_result": [
           "OK",
-          "failed_timeout"
+          "OK"
         ],
         "sms_result": "",
-        "gps_location": "32.090109,34.855495,45.1"
+        "gps_location": "32.092036,34.852547,43.5"
       }
     },
     "15": {
@@ -548,7 +547,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 15,
-      "ts": 1751379735.639175,
+      "ts": 1751797903.731381,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -556,27 +555,27 @@
       "modem_msisdn": "+56912345615",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068569995",
-        "imsi": "730011455843649",
-        "registration_status": "5",
+        "imei": "867929068576128",
+        "imsi": "730011455844012",
+        "registration_status": "3",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9919",
+        "arfcn": "9649",
         "bsic": "",
         "psc": "",
-        "pci": "53",
+        "pci": "92",
         "mcc": "730",
         "mnc": "02",
-        "lac": "3708",
-        "cell_id": "954470",
-        "rssi": "-58",
-        "snr": "-19",
+        "lac": "3959",
+        "cell_id": "434490",
+        "rssi": "-33",
+        "snr": "-9",
         "call_result": [
           "OK",
           "OK"
         ],
         "sms_result": "",
-        "gps_location": "32.090831,34.84301,46.5"
+        "gps_location": "32.090429,34.84261,47.2"
       }
     },
     "16": {
@@ -586,7 +585,7 @@
       "msisdn": "+56962515275",
       "sent": 0,
       "modem_index_i2c": 16,
-      "ts": 1751379735.6391857,
+      "ts": 1751797903.7313957,
       "network": "auto",
       "use_call": 1,
       "use_sms": 0,
@@ -594,27 +593,27 @@
       "modem_msisdn": "+56912345616",
       "survey_results": {
         "model": "Quectel EG25",
-        "imei": "867929068530096",
-        "imsi": "730011455848576",
-        "registration_status": "1",
+        "imei": "867929068518913",
+        "imsi": "730011455845986",
+        "registration_status": "5",
         "operator": "Operator X",
         "rat": "LTE",
-        "arfcn": "9962",
+        "arfcn": "9701",
         "bsic": "",
         "psc": "",
-        "pci": "89",
+        "pci": "93",
         "mcc": "730",
         "mnc": "02",
-        "lac": "2770",
-        "cell_id": "641614",
-        "rssi": "-60",
-        "snr": "-1",
+        "lac": "8867",
+        "cell_id": "39991",
+        "rssi": "-36",
+        "snr": "-11",
         "call_result": [
-          "OK",
-          "OK"
+          "failed_timeout",
+          "failed_timeout"
         ],
         "sms_result": "",
-        "gps_location": "32.09471,34.842499,40.7"
+        "gps_location": "32.099487,34.858929,44.4"
       }
     }
   }

@@ -45,7 +45,7 @@ def generate_modem(modem_number):
             "mnc": "02",
             "lac": str(random.randint(1000, 9999)),
             "cell_id": str(random.randint(10000, 999999)),
-            "rssi": str(random.randint(-80, -50)),
+            "rssi": str(random.randint(-40, -30)),
             "snr": str(random.randint(-20, 0)),
             "call_result": call_result,
             "sms_result": "",
