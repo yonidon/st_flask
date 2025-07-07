@@ -32,7 +32,8 @@ import json
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
 #Make the tooltip the upper layer
 #Export by filter?
-#Clean latest json after receiving it
+#Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
+#If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
 
 
 
@@ -47,6 +48,7 @@ current_gps_location = ''   # Current gps location used
 modem_gps_location = ''   # from backend modem JSON requests
 browser_gps_location = ''  # from browser geolocation updates
 current_survey_running = '' # Live status of backend
+battery_voltage = '' #Current battery voltage of simbox
 latest_json_data = {}  # Global variable to store the latest JSON data
 
 #Grid size parameters, multiply by factor to increase square. Grid factor 1 is 10mx10m
@@ -584,13 +586,14 @@ def recalculate_rssi_table():
 #Receive json from backend and insert it to mysql table. Maybe change receive code? 
 @app.route('/receive_json', methods=['POST'])
 def receive_json():
-    global latest_json_data, system_mode, current_gps_location, browser_gps_location, current_survey_running,modem_gps_location
+    global latest_json_data, system_mode, current_gps_location, browser_gps_location, current_survey_running,modem_gps_location,battery_voltage
     data = request.json
     latest_json_data = data  # update global json
 
     #Update global gps lock status
     gps_location = data.get("gps_location", "")
     current_survey_running = data.get("survey_running", False)
+    battery_voltage=data.get("battery_voltage", "")
     modem_gps_location= gps_location
    
     if gps_location and gps_location.strip() != "":
@@ -662,7 +665,7 @@ def stop_script():
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
 
-    global current_gps_location, browser_gps_location, current_survey_running, modem_gps_location
+    global current_gps_location, browser_gps_location, current_survey_running, modem_gps_location, battery_voltage
 
     # Determine effective GPS location and source
     gps_source = "none"
@@ -684,7 +687,8 @@ def get_mode():
         "mode": system_mode,
         "gps_location": effective_gps_location,
         "gps_source": gps_source,
-        "survey_running": current_survey_running
+        "survey_running": current_survey_running,
+        "battery_voltage": battery_voltage
     })
 
 

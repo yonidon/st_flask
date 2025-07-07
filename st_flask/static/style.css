@@ -7,7 +7,7 @@
   margin: 20px 0 30px 0;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.6);
   letter-spacing: 1px;
-  background: linear-gradient(90deg, #b3394e 0%, #1a70c8 100%);
+  background: linear-gradient(90deg, #b3394e 0%, #12161d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: glow 3s ease-in-out infinite alternate;
@@ -24,9 +24,9 @@
 
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: #0b1e39;
-    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #12161d;
+    color: #eee;
     margin: 0;
     padding: 20px;
 }
@@ -47,7 +47,7 @@ h5 {
 }
 
 button {
-    background-color: #145ea8;
+    background-color: #1f2633;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -58,7 +58,7 @@ button {
 }
 
 button:hover {
-    background-color: #1e7bd0;
+    background-color: #3a5ba0;
 }
 
 button:disabled {
@@ -81,11 +81,11 @@ button:disabled {
 
 .modem-square {
     width: calc(25% - 20px); /* Adjust width to fit 4 per row */
-    border: 1px solid #145ea8;
+    border: none;
     margin: 10px;
     padding: 10px;
     box-sizing: border-box;
-    background-color: #1e3c72;
+    background-color: #1f2633;;
     color: #ffffff;
     border-radius: 5px;
 }
@@ -134,7 +134,7 @@ tbody tr:nth-child(even) {
   background-color: #1e2f4a;
 }
 tbody tr:hover {
-  background-color: #2c3e63;
+  background-color: #3a5ba0;
 }
 
 table thead {
@@ -154,7 +154,7 @@ table tbody tr {
 }
 
 table tbody tr:hover {
-    background-color: #2a2a40; /* Highlight row on hover */
+    background-color: #3a5ba0; /* Highlight row on hover */
 }
 
 table tbody td {
@@ -226,9 +226,9 @@ table tbody td {
 }
 
 .tab-button {
-    background-color: #1e3c72;
+    background-color: #1f2633;
     color: white;
-    border: 1px solid #145ea8;
+    border: none;
     padding: 10px 20px;
     margin: 5px;
     cursor: pointer;
@@ -237,7 +237,7 @@ table tbody td {
 }
 
 .tab-button.active {
-    background-color: #145ea8;
+    background-color: #3a5ba0;
 }
 
 .tab-panel {
@@ -278,7 +278,7 @@ table tbody td {
 }
 
 .button-bar button {
-    background-color: #004080;
+    background-color: #1f2633;
     color: white;
     border: none;
     padding: 10px 16px;
@@ -293,7 +293,7 @@ table tbody td {
 }
 
 .button-bar button:hover {
-    background-color: #0059b3;
+    background-color: #3a5ba0;
 }
 
 .status-bar {
@@ -315,7 +315,7 @@ table tbody td {
 }
 
 .badge.on {
-    background-color: green;
+    background-color: #4caf50;
 }
 
 .badge.off {
@@ -323,7 +323,7 @@ table tbody td {
 }
 
 .badge.running {
-    background-color: green;
+    background-color: #4caf50;
 }
 
 .badge.stopped {
@@ -331,7 +331,7 @@ table tbody td {
 }
 
 .badge.gps-up {
-    background-color: green !important;
+    background-color: #4caf50 !important;
     color: white !important;
 }
 
@@ -346,12 +346,12 @@ table tbody td {
 }
 
 .badge.counter-active {
-    background-color: green;  /* green */
+    background-color: #4caf50;  /* green */
     color: white;
 }
 
 .badge.survey-running {
-    background-color: green; /* green */
+    background-color: #4caf50; /* green */
     color: white;
 }
 
@@ -363,6 +363,27 @@ table tbody td {
     background-color: #6c757d; /* red */
     color: white;
 }
+
+.battery-green {
+  background-color: #4caf50; /* green */
+  color: white;
+}
+
+.battery-orange {
+  background-color: #ff9800; /* orange */
+  color: white;
+}
+
+.battery-red {
+  background-color: #f44336; /* red */
+  color: white;
+}
+
+.battery-grey {
+  background-color: #6c757d; /* neutral grey */
+  color: white;
+}
+
 
 /*Segment for import button*/
 .db-button-group {
@@ -388,7 +409,7 @@ table tbody td {
   background-color: #1f3d7a;
   color: white;
   padding: 10px 20px;
-  border: 1px solid #3a5ba0;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
@@ -404,7 +425,7 @@ table tbody td {
 
 
 .file-label:hover {
-  background-color: #2a4f91;
+  background-color: #3a5ba0;
 }
 
 .file-label input[type="file"] {
@@ -422,7 +443,7 @@ table tbody td {
 }
 
 .action-button:hover {
-  background-color: #2a4f91;
+  background-color: #3a5ba0;
 }
 
 .hidden {
@@ -470,7 +491,7 @@ table tbody td {
 }
 
 .layer-toggle-group label {
-    background-color: #1f3d7a;
+    background-color: none;
     color: white;
     padding: 6px 12px;
     border-radius: 6px;
@@ -487,14 +508,14 @@ table tbody td {
   flex-wrap: wrap;
   justify-content: center;
   margin: 20px auto;
-  border: 1px solid #0d3e72;
+  border: none;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .primary-button-group button {
-  background-color: #145ea8;
+  background-color: #1f2633;
   color: white;
   padding: 12px 24px;
   border: none;
@@ -510,11 +531,11 @@ table tbody td {
 }
 
 .primary-button-group button.active {
-  background-color: #0d3e72;
+  background-color: #3a5ba0;
 }
 
 .primary-button-group button:hover {
-  background-color: #1a70c8;
+  background-color: #3a5ba0;
 }
 
 .primary-button-container {
@@ -529,7 +550,7 @@ table tbody td {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  border: 1px solid #3a5ba0;
+  border: none;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -538,10 +559,10 @@ table tbody td {
 
 
 .secondary-button-group button {
-  background-color: #1f3d7a;
+  background-color: #1f2633;
   color: white;
   padding: 12px 24px;
-  border: 1px solid #3a5ba0;
+  border: none;
   border-radius: 8px;
   font-weight: 500;
   font-size: 1rem;
@@ -558,12 +579,12 @@ table tbody td {
 }
 
 .secondary-button-group button:hover {
-  background-color: #2a4f91;
+  background-color: #3a5ba0;
 }
 
 .secondary-button-group button.active {
   background-color: #3a5ba0;
-  border: 1px solid #5a7bcc;
+  border: none;
   color: #ffffff;
 }
 
@@ -596,7 +617,7 @@ table tbody td {
 .edit-button {
     font-size: 12px;
     padding: 3px 8px;
-    background-color: #007bff;
+    background-color: #3a5ba0;
     color: white;
     border: none;
     border-radius: 4px;

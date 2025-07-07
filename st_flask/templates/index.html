@@ -56,6 +56,7 @@
     {% endwith %}
 
     <h1 class="main-header"><span id="animatedHeader"></span></h1>
+    <span id="batteryStatus">Battery:<span id="batteryValue" class="badge battery-grey">Unknown</span></span>
 
     <!-- Toggle simple/advanced mode -->
     <div class="mode-toggle">
@@ -90,7 +91,6 @@
             <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
             <span id="surveyStatus">Status: <span id="surveyStatusValue" class="badge">Unknown</span></span>
             <span id="messageCounter">Received: <span id="messageCounterValue" class="badge">0</span></span>
-
         </div>
         <div class="map-lock-container">
         <label class="lock-toggle">
@@ -540,12 +540,36 @@
                         surveyValue.textContent = 'Unknown';
                         surveyValue.className = 'badge survey-unknown';
                     }
+
+                    //Status of battery
+                    updateBatteryIndicator(data.battery_voltage);
+
                 });
             // Update refresh status locally
             const refreshValue = document.getElementById('refreshStatusValue');
             refreshValue.textContent = autoRefresh ? 'On' : 'Off';
             refreshValue.className = 'badge ' + (autoRefresh ? 'on' : 'off');
         }
+
+        function updateBatteryIndicator(voltage) {
+        const batteryValue = document.getElementById('batteryValue');
+
+        if (voltage === undefined || voltage === null || isNaN(voltage)) {
+            batteryValue.textContent = "Unknown";
+            batteryValue.className = "badge battery-grey";
+            return;
+        }
+        batteryValue.textContent = voltage.toFixed(2) + " V";
+
+        if (voltage >= 8.0) {
+            batteryValue.className = "badge battery-green";
+        } else if (voltage >= 7.0) {
+            batteryValue.className = "badge battery-orange";
+        } else {
+            batteryValue.className = "badge battery-red";
+        }
+        }
+
 
 
 	    function convertEpochToReadableTime(epoch) {
@@ -683,7 +707,7 @@
                                 <div style="
                                     width: 24px;
                                     height: 24px;
-                                    background-color: ${marked ? 'blue' : 'white'};
+                                    background-color: ${marked ? '#3a5ba0' : 'white'};
                                     border: 2px solid black;
                                     border-radius: 4px;
                                     text-align: center;
@@ -938,7 +962,7 @@ function loadRssiLayer() {
                                 <div style="
                                     width: 24px;
                                     height: 24px;
-                                    background-color: ${marked ? 'blue' : 'white'};
+                                    background-color: ${marked ? '#3a5ba0' : 'white'};
                                     border: 2px solid black;
                                     border-radius: 4px;
                                     text-align: center;
