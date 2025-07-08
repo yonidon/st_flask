@@ -57,6 +57,9 @@
 
     <h1 class="main-header"><span id="animatedHeader"></span></h1>
     <span id="batteryStatus">Battery:<span id="batteryValue" class="badge battery-grey">Unknown</span></span>
+    <span id="batteryPercentStatus">Percentage:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
+
+
 
     <!-- Toggle simple/advanced mode -->
     <div class="mode-toggle">
@@ -163,7 +166,7 @@
     </div><!-- table-tab ends here -->
 
     <div id="map-tab" class="tab-panel">  
-        <h5>Double click to set default location</h5>
+        <h5>Double click to set Current location</h5>
         <div class="secondary-button-group">
             <button onclick="confirmClearGrid()"><i class="fas fa-trash"></i> Clear Grid Table</button>
             <button onclick="confirmRecalculateGrid()"><i class="fas fa-calculator"></i> Recalculate Grid</button>
@@ -216,7 +219,7 @@
         let messageCounter = 0;//Number of messages with non-empty "senders" segment
         //Text for main header
         new Typed('#animatedHeader', {
-            strings: ["Simbox Tracker"],
+            strings: ["Simbox Tester"],
             typeSpeed: 100,
             backSpeed: 50,
             loop: false
@@ -567,13 +570,22 @@
 
             function updateBatteryIndicator(voltage) {
             const batteryValue = document.getElementById('batteryValue');
+            const batteryPercentValue = document.getElementById('batteryPercentValue');
 
             if (voltage === undefined || voltage === null || isNaN(voltage) || voltage == "") {
                 batteryValue.textContent = "Unknown";
+                batteryPercentValue.textContent = "Unknown";
                 batteryValue.className = "badge battery-grey";
+                batteryPercentValue.className = "badge battery-grey";
                 return;
             }
             batteryValue.textContent = voltage.toFixed(2) + " V";
+
+            // Calculate percentage
+            let percent = ((voltage - 6.4) / (8.3 - 6.4)) * 100;
+            percent = Math.max(0, Math.min(100, percent));
+            const percentText = percent.toFixed(0) + "%";
+            batteryPercentValue.textContent = percentText;
 
             if (voltage >= 8.0) {
                 batteryValue.className = "badge battery-green";
@@ -581,6 +593,15 @@
                 batteryValue.className = "badge battery-orange";
             } else {
                 batteryValue.className = "badge battery-red";
+            }
+
+            // Percentage color (same thresholds)
+            if (percent >= 75) {
+                batteryPercentValue.className = "badge battery-green";
+            } else if (percent >= 40) {
+                batteryPercentValue.className = "badge battery-orange";
+            } else {
+                batteryPercentValue.className = "badge battery-red";
             }
         }
 

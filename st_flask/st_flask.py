@@ -15,7 +15,6 @@ import json
 #update_avg_table creates overlapping squares. recalculate_grid works fine
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
 #If importing and file size too large/ wrong format then need toa dd exception
-#Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
 #In gps add indicator if browser location or simbox location (Maybe in modems-tab)
@@ -26,13 +25,13 @@ import json
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
 #Split frontend files
-#Receive numbers should be saved on refresh
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
 #Make the tooltip the upper layer
 #Export by filter?
 #Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
 #If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
 #use browser location setting not loaded by default
+#Collapsing not work anymore?
 
 
 
