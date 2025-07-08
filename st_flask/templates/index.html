@@ -137,7 +137,7 @@
             <form action="/import_csv" method="post" enctype="multipart/form-data" class="import-form">
                 <div class="import-button-group">
                     <label class="file-label">
-                        <input type="file" name="file" accept=".csv" required onchange="showFileName(this)">
+                        <input type="file" name="file" accept=".csv"  onchange="showFileName(this)">
                         <span id="fileLabelText"><i class="fas fa-file"></i> Choose File</span>
                     </label>
                     <button type="submit" class="action-button"><i class="fas fa-cloud-upload"></i> Import</button>
@@ -228,7 +228,16 @@
         const modemCollapseState = {}; // modemNumber → true/false
         let collapseAll = false; // false = expanded, true = collapsed
 
+        document.querySelector('.import-form').addEventListener('submit', function(e) {
+            const fileInput = this.querySelector('input[type="file"]');
+            if (!fileInput.value) {
+                alert('Please choose a CSV file to import.');
+                e.preventDefault();
+            }
+        });
 
+
+        
         //Toggle advanced/basic mode
         document.getElementById('modeToggleButton').addEventListener('click', function() {
             const body = document.body;
@@ -299,6 +308,8 @@
             fetch('/start_script', { method: 'POST' })
                 .then(() => {
                 updateStartStopButtons('start');
+                messageCounter = 0;
+                updateMessageCounterDisplay();
                 });
         });
 
@@ -374,11 +385,14 @@
 
         //Update number of non-empty messages
         function updateMessageCounterDisplay() {
-            const counterValue = document.getElementById('messageCounterValue');
-            counterValue.textContent = messageCounter;
-            counterValue.className = 'badge ' + (messageCounter === 0 ? 'counter-zero' : 'counter-active');
+        const counterValue = document.getElementById('messageCounterValue');
+        counterValue.textContent = messageCounter;
+        counterValue.className = 'badge ' + (messageCounter === 0 ? 'counter-zero' : 'counter-active');
 
+        // Save to localStorage
+        localStorage.setItem('messageCounter', messageCounter);
         }
+
 
 
         function showFileName(input) {
@@ -551,23 +565,23 @@
             refreshValue.className = 'badge ' + (autoRefresh ? 'on' : 'off');
         }
 
-        function updateBatteryIndicator(voltage) {
-        const batteryValue = document.getElementById('batteryValue');
+            function updateBatteryIndicator(voltage) {
+            const batteryValue = document.getElementById('batteryValue');
 
-        if (voltage === undefined || voltage === null || isNaN(voltage)) {
-            batteryValue.textContent = "Unknown";
-            batteryValue.className = "badge battery-grey";
-            return;
-        }
-        batteryValue.textContent = voltage.toFixed(2) + " V";
+            if (voltage === undefined || voltage === null || isNaN(voltage) || voltage == "") {
+                batteryValue.textContent = "Unknown";
+                batteryValue.className = "badge battery-grey";
+                return;
+            }
+            batteryValue.textContent = voltage.toFixed(2) + " V";
 
-        if (voltage >= 8.0) {
-            batteryValue.className = "badge battery-green";
-        } else if (voltage >= 7.0) {
-            batteryValue.className = "badge battery-orange";
-        } else {
-            batteryValue.className = "badge battery-red";
-        }
+            if (voltage >= 8.0) {
+                batteryValue.className = "badge battery-green";
+            } else if (voltage >= 7.0) {
+                batteryValue.className = "badge battery-orange";
+            } else {
+                batteryValue.className = "badge battery-red";
+            }
         }
 
 
@@ -1551,6 +1565,13 @@ function loadRssiLayer() {
 
         //Things that happen after page content is loaded
         document.addEventListener('DOMContentLoaded', function () {
+
+            //Constant for received event
+            const savedCount = localStorage.getItem('messageCounter');
+            if (savedCount !== null) {
+            messageCounter = parseInt(savedCount, 10);
+            }
+            updateMessageCounterDisplay();
 
             
             //Default map center and coordinate

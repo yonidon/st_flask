@@ -14,7 +14,7 @@ import json
 #=======Bugs and Features=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
-#If importing and duplicate primary key then need to raise exception
+#If importing and file size too large/ wrong format then need toa dd exception
 #Remove map tile console errors
 #No exception handler for database not connected
 #Check if works after reboot
@@ -25,8 +25,6 @@ import json
 #Add option to stop automatically after x surveys (maybe in settings)
 #Changed Received to steps, switch to percents
 #Turn point to green after done , can mark again (with blue border)
-#Add rssi layer to map
-#how to check simbox battery
 #Split frontend files
 #Receive numbers should be saved on refresh
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
@@ -34,6 +32,7 @@ import json
 #Export by filter?
 #Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
 #If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
+#use browser location setting not loaded by default
 
 
 
@@ -746,6 +745,7 @@ def export_csv():
 #Endpoint to import csv to main table
 @app.route('/import_csv', methods=['POST'])
 def import_csv():
+
     file = request.files.get('file')
     if not file or not file.filename.endswith('.csv'):
         flash('Please upload a valid CSV file.')
@@ -761,14 +761,20 @@ def import_csv():
     insert_query = f"INSERT INTO TBL_ST_SIMBOX_EVENTS ({', '.join(headers)}) VALUES ({', '.join(['%s'] * len(headers))})"
 
     for row in reader:
-        cursor.execute(insert_query, row)
+        try:
+            cursor.execute(insert_query, row)
+        except mysql.connector.IntegrityError as e:
+            # Handle duplicate keys or constraints
+            flash(f"Skipped a row due to database error: {str(e)}")
+        except Exception as e:
+            flash(f"Skipped a row due to unexpected error: {str(e)}")    
 
     conn.commit()
     cursor.close()
     conn.close()
 
     flash('CSV imported successfully.')
-    return redirect('/')
+    return redirect(request.referrer or '/')
 
 #Endpoint to clear table
 @app.route('/clear_table', methods=['POST'])

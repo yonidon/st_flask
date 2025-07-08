@@ -416,6 +416,12 @@ table tbody td {
   font-size: 1rem;
 }
 
+.file-label input[type="file"] {
+  position: absolute;
+  left: -9999px;
+}
+
+
 
 
 
