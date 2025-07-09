@@ -16,7 +16,6 @@ import json
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
 #If importing and file size too large/ wrong format then need to add exception
 #No exception handler for database not connected
-#Check if works after reboot
 #In gps add indicator if browser location or simbox location (Maybe in modems-tab)
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
@@ -31,6 +30,8 @@ import json
 #Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
 #If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
 #Collapsing not work anymore?
+#Add analytics tab? able to run sql queries and save them, and can only run select queries. Will display on graph.
+#Note that call timeout sometimes needs to be 10 seconds and not five
 
 
 

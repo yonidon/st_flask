@@ -59,8 +59,9 @@
 
 
     <div class="status-bar"> 
+        <span id="batteryPercentStatus">Battery:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
         <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
-        <span id="batteryPercentStatus">Percentage:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
+        <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
     </div>     
 
 
@@ -93,10 +94,10 @@
         </div>
 
         <div class="status-bar">
-            <span id="scriptStatusMain">Script: <span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
-            <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
-            <span id="surveyStatus">Status: <span id="surveyStatusValue" class="badge">Unknown</span></span>
-            <span id="messageCounter">Received: <span id="messageCounterValue" class="badge">0</span></span>
+            <span id="scriptStatusMain">Frontend:<span id="scriptStatusValue" class="badge stopped">Stopped</span></span>
+            <span id="surveyStatus">Backend:<span id="surveyStatusValue" class="badge">Unknown</span></span>
+            <span id="messageCounter">Events:<span id="messageCounterValue" class="badge">0</span></span>
+            <span id="goalProgress">Progress:<span id="goalProgressValue" class="badge goal-grey">-</span></span>
         </div>
         <div class="map-lock-container">
         <label class="lock-toggle">
@@ -220,9 +221,13 @@
 
     <script>
 
-        window.MAX_ZOOM=19;
+        let receivingGoal = 0;//Goal of messages to be received from simbox
+        
+        window.MAX_ZOOM=19;//Maximum zoom level in map
+        
         let messageCounter = 0;//Number of messages with non-empty "senders" segment
         let autoRefresh = JSON.parse(localStorage.getItem('autoRefresh') || 'true');
+        
         //let scriptRunning = false;
         const fetchDataInterval = 1000; 
         const updateCallResultInterval = 60000; //Interval for updating call result. Currently using the button instead
@@ -399,13 +404,39 @@
 
         //Update number of non-empty messages
         function updateMessageCounterDisplay() {
-        const counterValue = document.getElementById('messageCounterValue');
-        counterValue.textContent = messageCounter;
-        counterValue.className = 'badge ' + (messageCounter === 0 ? 'counter-zero' : 'counter-active');
+            const counterValue = document.getElementById('messageCounterValue');
+            counterValue.textContent = messageCounter;
+            counterValue.className = 'badge ' + (messageCounter === 0 ? 'counter-zero' : 'counter-active');
+            // Save to localStorage
+            localStorage.setItem('messageCounter', messageCounter);
 
-        // Save to localStorage
-        localStorage.setItem('messageCounter', messageCounter);
+            // Update the progress
+            updateGoalProgressIndicator();
+
         }
+
+        //Update progress percentage
+        function updateGoalProgressIndicator() {
+            const goalProgressValue = document.getElementById('goalProgressValue');
+
+            if (!receivingGoal || receivingGoal <= 0) {
+                goalProgressValue.textContent = "-";
+                goalProgressValue.className = "badge goal-grey";
+                return;
+            }
+
+            const percent = Math.min(100, Math.round((messageCounter / receivingGoal) * 100));
+            goalProgressValue.textContent = percent + "%";
+
+            if (percent >= 80) {
+                goalProgressValue.className = "badge goal-green";
+            } else if (percent >= 50) {
+                goalProgressValue.className = "badge goal-orange";
+            } else {
+                goalProgressValue.className = "badge goal-red";
+            }
+        }
+
 
 
 
@@ -1124,6 +1155,7 @@ function loadRssiLayer() {
                     const form = document.getElementById('settingsForm');
                     form.session_name.value = data.session_name || '';
                     form.receiving_goal.value = data.receiving_goal || '';
+                    receivingGoal = parseInt(form.receiving_goal.value, 10) || 0; //Put receiving goal into a variable
                     form.default_latitude.value = data.default_latitude || '';
                     form.default_longitude.value = data.default_longitude || '';
                     form.use_geolocation.checked = (data.use_geolocation === 'true');
@@ -1720,6 +1752,9 @@ function loadRssiLayer() {
                
             // Call fetchTableData immediately on load (This is for db table tab)
             fetchTableData();
+
+            //Load settings from database
+            loadSettings();
 
             // Start fetchData interval (This is for receiving modem data)
             fetchData(); // Call once immediately
