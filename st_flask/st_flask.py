@@ -30,8 +30,8 @@ import json
 #Export by filter?
 #Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
 #If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
-#use browser location setting not loaded by default
 #Collapsing not work anymore?
+
 
 
 

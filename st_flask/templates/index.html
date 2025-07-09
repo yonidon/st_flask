@@ -55,12 +55,13 @@
     {% endif %}
     {% endwith %}
 
-    <h1 class="main-header"><span id="animatedHeader"></span></h1>
+    <div class="main-header"><i class="fas fa-sim-card"></i> Simbox Tester</div>
 
-      
-    <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
-    <span id="batteryPercentStatus">Percentage:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
 
+    <div class="status-bar"> 
+        <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
+        <span id="batteryPercentStatus">Percentage:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
+    </div>     
 
 
     <!-- Toggle simple/advanced mode -->
@@ -103,6 +104,7 @@
             <span class="checkmark"></span>
             Lock Map
         </label>
+        <button id="centerMainMapButton" ><i class="fas fa-crosshairs"></i> Center Map</button>
         </div>
 
         <div id="mainMap" style="height: 400px; border-radius: 8px; margin-top: 20px;"></div>
@@ -220,13 +222,6 @@
 
         window.MAX_ZOOM=19;
         let messageCounter = 0;//Number of messages with non-empty "senders" segment
-        //Text for main header
-        new Typed('#animatedHeader', {
-            strings: ["Simbox Tester"],
-            typeSpeed: 100,
-            backSpeed: 50,
-            loop: false
-        });
         let autoRefresh = JSON.parse(localStorage.getItem('autoRefresh') || 'true');
         //let scriptRunning = false;
         const fetchDataInterval = 1000; 
@@ -234,6 +229,9 @@
         const modemCollapseState = {}; // modemNumber → true/false
         let collapseAll = false; // false = expanded, true = collapsed
 
+
+    
+        //Will print message if no file was chosen
         document.querySelector('.import-form').addEventListener('submit', function(e) {
             const fileInput = this.querySelector('input[type="file"]');
             if (!fileInput.value) {
@@ -241,6 +239,16 @@
                 e.preventDefault();
             }
         });
+
+        //Center to default location button
+        document.getElementById('centerMainMapButton').addEventListener('click', function() {
+            if (window.db_center && window.mainMap) {
+                window.mainMap.setView(window.db_center, window.mainMap.getZoom());
+            } else {
+                alert("Default center not available.");
+            }
+        });
+
 
 
         
@@ -797,7 +805,7 @@
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
-                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as default location</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as current location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -1077,7 +1085,7 @@ function loadRssiLayer() {
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
-                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as default location</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as current location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -1361,7 +1369,13 @@ function loadRssiLayer() {
                     }
                 }
             });
+
+            
             map.addControl(drawControl);
+
+            // Disable touch auto-finish
+            const polylineHandler = drawControl._toolbars.draw._modes.polyline.handler;
+            polylineHandler._vertexChanged = function(latlng) {};
 
             map.on(L.Draw.Event.CREATED, function (e) {
                 const layer = e.layer;
@@ -1494,6 +1508,10 @@ function loadRssiLayer() {
             draw: drawControl.options.draw  // reuse same drawing config
         });
         mainMap.addControl(drawControlMain);
+
+        // Disable touch auto-finish
+        const mainMapPolylineHandler = drawControlMain._toolbars.draw._modes.polyline.handler;
+        mainMapPolylineHandler._vertexChanged = function(latlng) {};
 
         mainMap.on(L.Draw.Event.CREATED, function (e) {
             const layer = e.layer;
