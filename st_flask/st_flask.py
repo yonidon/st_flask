@@ -14,7 +14,7 @@ import json
 #=======Bugs and Features=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
 #"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
-#If importing and file size too large/ wrong format then need toa dd exception
+#If importing and file size too large/ wrong format then need to add exception
 #No exception handler for database not connected
 #Check if works after reboot
 #In gps add indicator if browser location or simbox location (Maybe in modems-tab)
