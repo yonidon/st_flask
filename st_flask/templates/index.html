@@ -56,7 +56,9 @@
     {% endwith %}
 
     <h1 class="main-header"><span id="animatedHeader"></span></h1>
-    <span id="batteryStatus">Battery:<span id="batteryValue" class="badge battery-grey">Unknown</span></span>
+
+      
+    <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
     <span id="batteryPercentStatus">Percentage:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
 
 
@@ -121,6 +123,7 @@
 
         <div class="status-bar">
             <span id="refreshStatus">Auto-Refresh: <span id="refreshStatusValue" class="badge on">On</span></span>
+            <span id="batteryStatus">Battery voltage:<span id="batteryValue" class="badge battery-grey">Unknown</span></span>
         </div>
         
         <div class="modem-container" id="modemContainer">
@@ -559,7 +562,7 @@
                     }
 
                     //Status of battery
-                    updateBatteryIndicator(data.battery_voltage);
+                    updateBatteryIndicator(data.battery_voltage,data.battery_status);
 
                 });
             // Update refresh status locally
@@ -568,7 +571,7 @@
             refreshValue.className = 'badge ' + (autoRefresh ? 'on' : 'off');
         }
 
-            function updateBatteryIndicator(voltage) {
+            function updateBatteryIndicator(voltage,status) {
             const batteryValue = document.getElementById('batteryValue');
             const batteryPercentValue = document.getElementById('batteryPercentValue');
 
@@ -595,13 +598,33 @@
                 batteryValue.className = "badge battery-red";
             }
 
-            // Percentage color (same thresholds)
+            // Percentage color 
             if (percent >= 75) {
                 batteryPercentValue.className = "badge battery-green";
             } else if (percent >= 40) {
                 batteryPercentValue.className = "badge battery-orange";
             } else {
                 batteryPercentValue.className = "badge battery-red";
+            }
+
+            //Charging status
+            const batteryStatusValue = document.getElementById('batteryStatusValue');
+            if (!status || status === "Unknown") {
+                batteryStatusValue.textContent = "Unknown";
+                batteryStatusValue.className = "badge battery-unknown";
+                return;
+            }
+            if (status.toLowerCase() === "charging") {
+                batteryStatusValue.textContent = "Charging";
+                batteryStatusValue.className = "badge battery-charging";
+            } 
+            else if (status.toLowerCase() === "discharging"){
+                batteryStatusValue.textContent = "Discharging";
+                batteryStatusValue.className = "badge battery-discharging";
+            }
+            else{
+                batteryStatusValue.textContent = "Unknown";
+                batteryStatusValue.className = "badge battery-unknown";
             }
         }
 

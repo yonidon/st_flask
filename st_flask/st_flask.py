@@ -686,6 +686,7 @@ def get_mode():
         "gps_location": effective_gps_location,
         "gps_source": gps_source,
         "survey_running": current_survey_running,
+        "battery_status": latest_json_data.get("battery_status", "Unknown"),
         "battery_voltage": battery_voltage
     })
 

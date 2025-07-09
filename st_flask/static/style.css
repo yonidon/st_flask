@@ -384,6 +384,22 @@ table tbody td {
   color: white;
 }
 
+.battery-charging {
+  background-color: #4caf50; /* green */
+  color: white;
+}
+
+.battery-discharging {
+  background-color: #f44336; /* red */
+  color: white;
+}
+
+.battery-unknown {
+  background-color: #6c757d; /* grey */
+  color: white;
+}
+
+
 
 /*Segment for import button*/
 .db-button-group {
