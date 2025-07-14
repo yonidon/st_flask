@@ -334,32 +334,25 @@
 
         // Stop button click
         document.getElementById('stopScript').addEventListener('click', function() {
-            fetch('/stop_script', { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === "next_point") {
-                    if (confirm("Set default location to the next trail point?")) {
-                        fetch('/set_default_location', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            latitude: data.latitude,
-                            longitude: data.longitude,
-                            trail_id: data.trail_id
-                        })
-                        }).then(() => {
-                        alert("Default location updated to next trail point.");
-                        });
-                    }
-                    } else if (data.status === "trail_finished") {
-                    alert("Trail finished—no more points.");
-                    } else {
-                    console.log("Stopped.");
-                    }
-                    loadMainMapTrail();
-                    
-                });
+        fetch('/stop_script', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+            if (data.status === "next_point") {
+                if (confirm("Set default location to the next trail point?")) {
+                // Call your helper
+                setAsDefaultLocation(data.latitude, data.longitude, data.trail_id);
+                //alert("Default location updated to next trail point.");
+                }
+            } else if (data.status === "trail_finished") {
+                alert("Trail finished—no more points.");
+            } else {
+                console.log("Stopped.");
+            }
+            updateStartStopButtons('stop');
+            loadMainMapTrail();
+            });
         });
+
 
 
         
