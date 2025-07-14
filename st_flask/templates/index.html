@@ -335,8 +335,29 @@
         // Stop button click
         document.getElementById('stopScript').addEventListener('click', function() {
             fetch('/stop_script', { method: 'POST' })
-                .then(() => {
-                updateStartStopButtons('stop');
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "next_point") {
+                    if (confirm("Set default location to the next trail point?")) {
+                        fetch('/set_default_location', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            latitude: data.latitude,
+                            longitude: data.longitude,
+                            trail_id: data.trail_id
+                        })
+                        }).then(() => {
+                        alert("Default location updated to next trail point.");
+                        });
+                    }
+                    } else if (data.status === "trail_finished") {
+                    alert("Trail finished—no more points.");
+                    } else {
+                    console.log("Stopped.");
+                    }
+                    loadMainMapTrail();
+                    
                 });
         });
 
@@ -836,7 +857,7 @@
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
-                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as current location</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE},${trailPoint.TRAIL_ID})">Set as current location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -1116,7 +1137,7 @@ function loadRssiLayer() {
                                 <div class="popup-header">
                                     <b>Location</b>
                                     <button class="edit-button" onclick="editDescription(${trailPoint.TRAIL_ID}, ${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Edit</button>
-                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE})">Set as current location</button>
+                                    <button class="edit-button" onclick="setAsDefaultLocation(${trailPoint.LATITUDE}, ${trailPoint.LONGITUDE},${trailPoint.TRAIL_ID})">Set as current location</button>
                                 </div>
                                 <div class="popup-description">${description}</div>
                             </div>
@@ -1197,11 +1218,11 @@ function loadRssiLayer() {
             });
 
                 //When clicking on trail point it sets default location in database
-                function setAsDefaultLocation(lat, lon) {
+                function setAsDefaultLocation(lat, lon,trailId = "0") {
                     fetch('/set_default_location', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ latitude: lat, longitude: lon })
+                        body: JSON.stringify({ latitude: lat, longitude: lon, trail_id: trailId })
                     })
                     .then(res => res.json())
                     .then(() => {

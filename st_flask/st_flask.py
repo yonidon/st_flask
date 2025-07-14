@@ -137,6 +137,13 @@ def jitter_coordinates(lat, lon):
     delta_lon = random.uniform(-0.000005, 0.000005)
     return lat + delta_lat, lon + delta_lon
 
+#Compare floats with less precision
+def floats_equal(a, b, epsilon=1e-6):
+    try:
+        return abs(float(a) - float(b)) < epsilon
+    except:
+        return False
+
 #Create table if not exists
 def init_db():
     try:
@@ -655,11 +662,99 @@ def start_script():
     system_mode = 'start'
     return jsonify({"status": "start mode active"})
 
+
+#When stop mode is pressed, default location is incremented to next trail point (If users presses ok on prompt)
 @app.route('/stop_script', methods=['POST'])
 def stop_script():
     global system_mode
     system_mode = 'stop'
+
+    default_trail_id = get_setting('default_is_trail')
+    
+
+    # If not set, just return
+    if not default_trail_id or default_trail_id == "0":
+        return jsonify({"status": "stop mode active"})
+
+    # If set, get all points of this trail
+    conn = mysql.connector.connect(**DATABASE_CONFIG)
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT LATITUDE, LONGITUDE, TIMESTAMP
+        FROM TBL_ST_SIMBOX_TRAIL
+        WHERE TRAIL_ID=%s
+        ORDER BY ID ASC
+    """, (default_trail_id,))
+
+    points = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    # If no points found
+    if not points:
+        return jsonify({"status": "stop mode active"})
+
+    # Determine which point was last set as default
+    default_lat = get_setting('default_latitude')
+    default_lon = get_setting('default_longitude')
+
+    current_idx = None
+    for idx, point in enumerate(points):
+        if (
+            floats_equal(point['LATITUDE'], default_lat)
+            and floats_equal(point['LONGITUDE'], default_lon)
+        ):
+            current_idx = idx
+            break
+
+
+    # If last point in trail
+    if current_idx is not None and current_idx + 1 >= len(points):
+        # Clear the default trail
+        set_setting('default_is_trail', "0")
+
+        # Mark current point as IS_MARKED=1
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE TBL_ST_SIMBOX_TRAIL
+            SET IS_MARKED=1
+            WHERE TRAIL_ID=%s AND LATITUDE=%s AND LONGITUDE=%s
+        """, (default_trail_id, default_lat, default_lon))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({"status": "trail_finished"})
+
+    # If next point exists, return coordinates
+    if current_idx is not None:
+
+        # Mark current point as IS_MARKED=1
+        conn = mysql.connector.connect(**DATABASE_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE TBL_ST_SIMBOX_TRAIL
+            SET IS_MARKED=1
+            WHERE TRAIL_ID=%s AND LATITUDE=%s AND LONGITUDE=%s
+        """, (default_trail_id, default_lat, default_lon))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        next_point = points[current_idx + 1]
+        return jsonify({
+            "status": "next_point",
+            "latitude": str(next_point['LATITUDE']),
+            "longitude": str(next_point['LONGITUDE']),
+            "trail_id": default_trail_id
+        })
+    
+    # If no matching current point, return stop
     return jsonify({"status": "stop mode active"})
+
 
 @app.route('/get_mode', methods=['GET'])
 def get_mode():
@@ -1002,8 +1097,11 @@ def set_default_location():
     data = request.json
     lat = str(data.get('latitude'))
     lon = str(data.get('longitude'))
+    trail_id = str(data.get('trail_id', '0'))  # 0 if not from trail
     set_setting('default_latitude', lat)
     set_setting('default_longitude', lon)
+    set_setting('default_is_trail', trail_id)
+
     return jsonify({"status": "default location saved"})
 
 
