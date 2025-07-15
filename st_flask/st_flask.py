@@ -32,6 +32,9 @@ import json
 #Collapsing not work anymore?
 #Add analytics tab? able to run sql queries and save them, and can only run select queries. Will display on graph.
 #Note that call timeout sometimes needs to be 10 seconds and not five
+#Add a button to refresh analysis map
+#Add a parameter to update_call_result which will include offset from real time. also parameter for difference
+#Combine inject_json inside code
 
 
 

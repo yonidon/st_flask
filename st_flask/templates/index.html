@@ -606,7 +606,7 @@
                     if (data.survey_running === true) {
                         surveyValue.textContent = 'Running';
                         surveyValue.className = 'badge survey-running';
-                    } else if (data.survey_running === false) {
+                    } else if (data.survey_running === false || data.survey_running === 0) {
                         surveyValue.textContent = 'Stopped';
                         surveyValue.className = 'badge survey-stopped';
                     } else {
