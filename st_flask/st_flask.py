@@ -424,6 +424,9 @@ def update_avg_table(lat, lon, call_result):
     fail_count = len(call_result) - ok_count
     total_points = len(call_result)
 
+    if not call_result or call_result.strip() in ("[]", ""):
+        return  # Skip this entry entirely
+
     conn = mysql.connector.connect(**DATABASE_CONFIG)
     cursor = conn.cursor()
 
@@ -482,6 +485,9 @@ def recalculate_grid_table():
 
         if not isinstance(call_results, list):
             continue
+
+        if not call_results:
+            continue  # Skip empty CALL_RESULT
 
         ok_count = sum(1 for res in call_results if res == 'OK')
         fail_count = len(call_results) - ok_count

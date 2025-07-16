@@ -975,21 +975,28 @@ function loadRssiLayer() {
                             let results = [];    // declare results here so it's always defined
 
                             try {
-                                results = JSON.parse(item.CALL_RESULT || '[]');
-                                const total = results.length;
+                            const results = JSON.parse(item.CALL_RESULT || '[]');
+                            const total = results.length;
+
+                            if (total === 0) {
+                                color = 'gray';
+                            } else {
                                 const failed = results.filter(r => r.toLowerCase() !== 'ok').length;
-                                const failRatio = total > 0 ? failed / total : 0;
+                                const failRatio = failed / total;
 
                                 if (failRatio > 0.9) {
-                                    color = 'red';
+                                color = 'red';
                                 } else if (failRatio > 0.5) {
-                                    color = 'yellow';
+                                color = 'yellow';
                                 } else {
-                                    color = 'green';
+                                color = 'green';
                                 }
-                            } catch (e) {
-                                console.warn('Failed to parse CALL_RESULT:', item.CALL_RESULT);
                             }
+                            } catch (e) {
+                            console.warn('Invalid CALL_RESULT:', item.CALL_RESULT);
+                            color = 'gray';
+                            }
+
 
 
                             const marker = L.circleMarker([item.LATITUDE, item.LONGITUDE], {
