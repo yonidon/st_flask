@@ -921,6 +921,9 @@ function loadRssiLayer() {
       window.rssiLayerGroup.clearLayers();
 
       data.forEach(item => {
+
+        if (!isFinite(item.LAT_MIN) || !isFinite(item.LAT_MAX) || !isFinite(item.RSSI_SUM) || !isFinite(item.TOTAL_POINTS) || isFinite(data.TOTAL_POINTS) )
+                    return; // Skip bad data
         const lat = (item.LAT_MIN + item.LAT_MAX) / 2;
         const lon = (item.LON_MIN + item.LON_MAX) / 2;
         const avgRssi = item.RSSI_SUM / item.TOTAL_POINTS;
@@ -1695,8 +1698,6 @@ function loadRssiLayer() {
 
             //Load settings on page load . This also initializes the map.
             initDefaultLocation();
-
-            // Then set the lock state
 
 
             //On page load, load advanced/simple state
