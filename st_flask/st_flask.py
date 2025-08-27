@@ -37,7 +37,6 @@ import json
 #Add "please choose trail" message if not selected
 #Reduce button size of switching modes. Also, just advanced/simple without switch
 #Remove backend and frontend from simple mode
-#When switching to simple mode - should jump to main page
 
 
 

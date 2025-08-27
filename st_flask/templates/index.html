@@ -68,7 +68,7 @@
     <!-- Toggle simple/advanced mode -->
     <div class="mode-toggle">
     <button id="modeToggleButton">
-        <i class="fas fa-cogs"></i> Switch to Advanced Mode
+        <i class="fas fa-cogs"></i> Advanced Mode
     </button>
     </div>
 
@@ -268,9 +268,9 @@
 
             // Update button text
             if (isAdvanced) {
-                this.innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+                this.innerHTML = '<i class="fas fa-cogs"></i> Simple Mode';
             } else {
-                this.innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+                this.innerHTML = '<i class="fas fa-cogs"></i> Advanced Mode';
             }
 
             // Activate first tab if none
@@ -278,13 +278,30 @@
                 const anyActive = document.querySelector('.tab-button.active');
                 if (!anyActive) {
                 const firstButton = document.querySelector('.tab-button');
-                if (firstButton) {
-                    firstButton.classList.add('active');
-                    const targetId = firstButton.dataset.tab;
-                    document.querySelectorAll('.tab-panel').forEach(panel => {
-                    panel.classList.toggle('active', panel.id === targetId);
-                    });
+                    if (firstButton) {
+                        firstButton.classList.add('active');
+                        const targetId = firstButton.dataset.tab;
+                        document.querySelectorAll('.tab-panel').forEach(panel => {
+                        panel.classList.toggle('active', panel.id === targetId);
+                        });
+                    }
                 }
+            }
+
+            //If simple mode then automatically go to main tab
+            else{
+                const mainBtn = document.querySelector('.tab-button[data-tab="main-tab"]');
+                if (mainBtn) {
+                    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                    mainBtn.classList.add('active');
+
+                    const targetId = mainBtn.dataset.tab;
+                    document.querySelectorAll('.tab-panel').forEach(panel => {
+                        panel.classList.toggle('active', panel.id === targetId);
+                    });
+
+                    // Save active tab in localStorage
+                    localStorage.setItem('activeTab', targetId);
                 }
             }
         });
@@ -923,7 +940,7 @@
                 data.forEach(item => {
 
                     //isFinite(data.TOTAL_POINTS) is not logical but for some reason it fixes some problem
-                    if (!isFinite(item.LAT_MIN) || !isFinite(item.LAT_MAX) || !isFinite(item.RSSI_SUM) || !isFinite(item.TOTAL_POINTS)  )
+                    if (!isFinite(item.LAT_MIN) || !isFinite(item.LAT_MAX) || !isFinite(item.RSSI_SUM) || !isFinite(item.TOTAL_POINTS))
                                 return; // Skip bad data
                     const lat = (item.LAT_MIN + item.LAT_MAX) / 2;
                     const lon = (item.LON_MIN + item.LON_MAX) / 2;
@@ -1700,10 +1717,10 @@
            const savedMode = localStorage.getItem('mode');
                 if (savedMode === 'advanced') {
                     document.body.classList.add('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Simple Mode';
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Simple Mode';
                 } else {
                     document.body.classList.remove('advanced-mode');
-                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Switch to Advanced Mode';
+                    document.getElementById('modeToggleButton').innerHTML = '<i class="fas fa-cogs"></i> Advanced Mode';
             }   
 
             // On page load, always load latest modem state once
