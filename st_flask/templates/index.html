@@ -914,54 +914,50 @@
                 
             }
 
-function loadRssiLayer() {
-  fetch('/rssi_grid')
-    .then(res => res.json())
-    .then(data => {
-      window.rssiLayerGroup.clearLayers();
+            function loadRssiLayer() {
+            fetch('/rssi_grid')
+                .then(res => res.json())
+                .then(data => {
+                window.rssiLayerGroup.clearLayers();
 
-      data.forEach(item => {
+                data.forEach(item => {
 
-        if (!isFinite(item.LAT_MIN) || !isFinite(item.LAT_MAX) || !isFinite(item.RSSI_SUM) || !isFinite(item.TOTAL_POINTS) || isFinite(data.TOTAL_POINTS) )
-                    return; // Skip bad data
-        const lat = (item.LAT_MIN + item.LAT_MAX) / 2;
-        const lon = (item.LON_MIN + item.LON_MAX) / 2;
-        const avgRssi = item.RSSI_SUM / item.TOTAL_POINTS;
+                    //isFinite(data.TOTAL_POINTS) is not logical but for some reason it fixes some problem
+                    if (!isFinite(item.LAT_MIN) || !isFinite(item.LAT_MAX) || !isFinite(item.RSSI_SUM) || !isFinite(item.TOTAL_POINTS)  )
+                                return; // Skip bad data
+                    const lat = (item.LAT_MIN + item.LAT_MAX) / 2;
+                    const lon = (item.LON_MIN + item.LON_MAX) / 2;
+                    const avgRssi = item.RSSI_SUM / item.TOTAL_POINTS;
 
-        // Color: green for good RSSI, red for poor
-        let color = 'green';
-        if (avgRssi < -100) color = 'red';
-        else if (avgRssi < -85) color = 'orange';
-        else if (avgRssi < -70) color = 'yellow';
+                    // Color: green for good RSSI, red for poor
+                    let color = 'green';
+                    if (avgRssi < -100) color = 'red';
+                    else if (avgRssi < -85) color = 'orange';
+                    else if (avgRssi < -70) color = 'yellow';
 
-        // CircleMarker with more opacity blending
-        const marker = L.circleMarker([lat, lon], {
-            radius: 25,
-            fillColor: color,
-            fillOpacity: 0.25,
-            color: color,
-            opacity: 0.1,     // thin border halo
-            weight: 8,
-            pane: 'rssiPane'
-        }).addTo(window.rssiLayerGroup);
+                    // CircleMarker with more opacity blending
+                    const marker = L.circleMarker([lat, lon], {
+                        radius: 25,
+                        fillColor: color,
+                        fillOpacity: 0.25,
+                        color: color,
+                        opacity: 0.1,     // thin border halo
+                        weight: 8,
+                        pane: 'rssiPane'
+                    }).addTo(window.rssiLayerGroup);
 
-        // Label in center
-        marker.bindTooltip(
-          `RSSI: ${avgRssi.toFixed(1)} dBm`,
-          { 
-            permanent: true, 
-            direction: 'center', 
-            className: 'rssi-label' 
-          }
-        );
-      });
-    });
-}
-
-
-
-
-
+                    // Label in center
+                    marker.bindTooltip(
+                    `RSSI: ${avgRssi.toFixed(1)} dBm`,
+                    { 
+                        permanent: true, 
+                        direction: 'center', 
+                        className: 'rssi-label' 
+                    }
+                    );
+                });
+                });
+            }
 
 
 

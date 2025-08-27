@@ -19,22 +19,25 @@ import json
 #In gps add indicator if browser location or simbox location (Maybe in modems-tab)
 #Start transmission and stop remotely (future feature)
 #Layer for active transmission and inactive
-#Only one point can be marked
 #Add option to stop automatically after x surveys (maybe in settings)
-#Changed Received to steps, switch to percents
-#Turn point to green after done , can mark again (with blue border)
 #Split frontend files
 #If script stops sending messages then set back to unknown (No need because there are running/stopping status indicators)
 #Make the tooltip the upper layer
 #Export by filter?
-#Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted
-#If call is disabled and call result is N/A need to do somethign about it (gray marker?) Also, success rate is NAN 
+#Clean latest json after receiving it. This problem is in fetchData(), since latest_json_data is not getting deleted 
 #Collapsing not work anymore?
 #Add analytics tab? able to run sql queries and save them, and can only run select queries. Will display on graph.
 #Note that call timeout sometimes needs to be 10 seconds and not five
 #Add a button to refresh analysis map
 #Add a parameter to update_call_result which will include offset from real time. also parameter for difference
 #Combine inject_json inside code
+
+
+#Fix:
+#Add "please choose trail" message if not selected
+#Reduce button size of switching modes. Also, just advanced/simple without switch
+#Remove backend and frontend from simple mode
+#When switching to simple mode - should jump to main page
 
 
 
@@ -424,7 +427,7 @@ def update_avg_table(lat, lon, call_result):
     fail_count = len(call_result) - ok_count
     total_points = len(call_result)
 
-    if not call_result or call_result.strip() in ("[]", ""):
+    if not call_result:
         return  # Skip this entry entirely
 
     conn = mysql.connector.connect(**DATABASE_CONFIG)
