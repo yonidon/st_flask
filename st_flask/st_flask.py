@@ -35,7 +35,6 @@ import json
 
 #Fix:
 #Add "please choose trail" message if not selected
-#Reduce button size of switching modes. Also, just advanced/simple without switch
 #Remove backend and frontend from simple mode
 
 
@@ -358,7 +357,10 @@ def update_call_result():
 
         for row in rows:
             try:
-                result_list = json.loads(row['CALL_RESULT'])
+                # Refresh CALL_RESULT because multiple CALL rows may refer to same event
+                cursor.execute("SELECT CALL_RESULT FROM TBL_ST_SIMBOX_EVENTS WHERE ID=%s", (row['ID'],))
+                fresh = cursor.fetchone()
+                result_list = json.loads(fresh['CALL_RESULT'])
                 if not isinstance(result_list, list) or not result_list:
                     continue
 
@@ -1117,35 +1119,6 @@ def set_default_location():
 
 
 #============================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

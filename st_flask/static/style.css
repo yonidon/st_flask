@@ -726,6 +726,8 @@ body.advanced-mode .tab-panel-container .tab-panel.active {
 .mode-toggle button {
   display: block;
   margin: 20px auto;
+  font-size: 0.9rem;
+  padding: 6px 12px;
 }
 
 /*==========Style for settings tab===============*/

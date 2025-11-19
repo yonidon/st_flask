@@ -12907,3 +12907,5 @@ st_flask/static/tiles/8/67/104.png
 st_flask/static/tiles/8/70/103.png
 st_flask/static/tiles/9/135/208.png
 st_flask/static/tiles/9/140/207.png
+st_flask/nohup.out
+.gitignore
