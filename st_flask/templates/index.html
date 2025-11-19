@@ -62,6 +62,7 @@
         <span id="batteryPercentStatus">Battery:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
         <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
         <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
+        <span id="systemTime">Time: <span id="systemTimeValue" class="badge time-grey">--:--:--</span></span>
     </div>     
 
 
@@ -184,6 +185,7 @@
             <label><input type="checkbox" id="toggleRssiLayer" checked> Show RSSI layer</label>
         </div>
         <div id="map" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
+        <button id="centerMapButton" ><i class="fas fa-crosshairs"></i> Center Map</button>
     </div>
 
     <div id="settings-tab" class="tab-panel">
@@ -245,7 +247,7 @@
             }
         });
 
-        //Center to default location button
+        //Center to default location button (main map)
         document.getElementById('centerMainMapButton').addEventListener('click', function() {
             if (window.db_center && window.mainMap) {
                 window.mainMap.setView(window.db_center, window.mainMap.getZoom());
@@ -254,6 +256,14 @@
             }
         });
 
+        //Center to default location button
+        document.getElementById('centerMapButton').addEventListener('click', function() {
+            if (window.db_center && window.map) {
+                window.map.setView(window.db_center, window.map.getZoom());
+            } else {
+                alert("Default center not available.");
+            }
+        });
 
 
         
@@ -633,6 +643,12 @@
 
                     //Status of battery
                     updateBatteryIndicator(data.battery_voltage,data.battery_status);
+
+                    // System time
+                    const timeValue = document.getElementById('systemTimeValue');
+                    if (data.system_time) {
+                        timeValue.textContent = data.system_time;
+                    }
 
                 });
             // Update refresh status locally

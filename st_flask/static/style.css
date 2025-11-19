@@ -395,6 +395,11 @@ table tbody td {
   color: white;
 }
 
+.time-grey {
+  background-color: #6c757d; /* neutral grey */
+  color: white;
+}
+
 .battery-unknown {
   background-color: #6c757d; /* grey */
   color: white;

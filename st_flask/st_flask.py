@@ -29,13 +29,16 @@ import json
 #Add analytics tab? able to run sql queries and save them, and can only run select queries. Will display on graph.
 #Note that call timeout sometimes needs to be 10 seconds and not five
 #Add a button to refresh analysis map
-#Add a parameter to update_call_result which will include offset from real time. also parameter for difference
+#Add a parameter to update_call_result which will include offset from real time. also parameter for difference in gui
 #Combine inject_json inside code
+#Add center map button in the second map
+#Remove from phone app the call window, maybe move it to app itself
 
 
 #Fix:
 #Add "please choose trail" message if not selected
 #Remove backend and frontend from simple mode
+#Remove pop up messages
 
 
 
@@ -796,7 +799,8 @@ def get_mode():
         "gps_source": gps_source,
         "survey_running": current_survey_running,
         "battery_status": latest_json_data.get("battery_status", "Unknown"),
-        "battery_voltage": battery_voltage
+        "battery_voltage": battery_voltage,
+        "system_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
 
 
