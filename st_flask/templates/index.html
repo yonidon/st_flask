@@ -62,7 +62,7 @@
         <span id="batteryPercentStatus">Battery:<span id="batteryPercentValue" class="badge battery-grey">Unknown</span></span>
         <span id="batteryStatusIndicator">Status:<span id="batteryStatusValue" class="badge battery-grey">Unknown</span></span>
         <span id="gpsStatusMain">GPS: <span id="gpsStatusValue" class="badge">Checking...</span></span>
-        <span id="systemTime">Time: <span id="systemTimeValue" class="badge time-grey">--:--:--</span></span>
+        <span id="systemTime">Simbox Time: <span id="systemTimeValue" class="badge time-grey">--:--:--</span></span>
     </div>     
 
 
@@ -209,6 +209,11 @@
         <label>
         Default Longitude:
         <input type="text" name="default_longitude">
+        </label><br>
+        
+        <label>
+        Time difference from phone(In seconds):
+        <input type="number" name="call_match_seconds" min="1">
         </label><br>
 
         <label>
@@ -1212,6 +1217,7 @@
                     form.default_latitude.value = data.default_latitude || '';
                     form.default_longitude.value = data.default_longitude || '';
                     form.use_geolocation.checked = (data.use_geolocation === 'true');
+                    form.call_match_seconds.value = data.call_match_seconds || 180;
                     });
 
                     
@@ -1225,7 +1231,8 @@
                     receiving_goal: form.receiving_goal.value,
                     default_latitude: form.default_latitude.value,
                     default_longitude: form.default_longitude.value,
-                    use_geolocation: form.use_geolocation.checked ? 'true' : 'false'
+                    use_geolocation: form.use_geolocation.checked ? 'true' : 'false',
+                    call_match_seconds: form.call_match_seconds.value
                 };
 
                 fetch('/update_settings', {

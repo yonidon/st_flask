@@ -13,7 +13,7 @@ import json
 
 #=======Bugs and Features=======
 #update_avg_table creates overlapping squares. recalculate_grid works fine
-#"Update calls" - need to add option to upload a file (maybe hide this button, currently getting BUSY result)
+#"Update calls" - need to add option to upload a file
 #If importing and file size too large/ wrong format then need to add exception
 #No exception handler for database not connected
 #In gps add indicator if browser location or simbox location (Maybe in modems-tab)
@@ -29,9 +29,7 @@ import json
 #Add analytics tab? able to run sql queries and save them, and can only run select queries. Will display on graph.
 #Note that call timeout sometimes needs to be 10 seconds and not five
 #Add a button to refresh analysis map
-#Add a parameter to update_call_result which will include offset from real time. also parameter for difference in gui
 #Combine inject_json inside code
-#Add center map button in the second map
 #Remove from phone app the call window, maybe move it to app itself
 
 
@@ -346,15 +344,19 @@ def update_call_result():
     try:
         conn = mysql.connector.connect(**DATABASE_CONFIG)
         cursor = conn.cursor(dictionary=True)
+        call_match_seconds = int(get_setting("call_match_seconds") or 180)
 
         query = """
             SELECT e.ID, e.CALL_RESULT
             FROM TBL_ST_SIMBOX_EVENTS e
             JOIN TBL_ST_SIMBOX_CALLS c 
             ON e.MODEM_MSISDN = c.MSISDN
-            WHERE ABS(TIMESTAMPDIFF(SECOND, e.TIMESTAMP, c.EVENT_TIME)) <= 10
+            WHERE ABS(TIMESTAMPDIFF(SECOND, e.TIMESTAMP, c.EVENT_TIME)) <= %s
         """
-        cursor.execute(query)
+
+        
+        cursor.execute(query, (call_match_seconds,))
+        print("Interpolated SQL:", cursor._executed)
         rows = cursor.fetchall()
         updated = 0
 
