@@ -37,6 +37,8 @@ import json
 #Add "please choose trail" message if not selected
 #Remove backend and frontend from simple mode
 #Remove pop up messages
+# Don't pop up "set as default area"
+# Increase zoom level
 
 
 
