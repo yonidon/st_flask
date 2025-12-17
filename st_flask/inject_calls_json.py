@@ -30,7 +30,7 @@ for record in data:
     msisdn = record['msisdn']
     event_time = record['EVENT_TIME']
     cursor.execute(
-        "INSERT INTO TBL_ST_SIMBOX_CALLS (msisdn, EVENT_TIME) VALUES (%s, %s)",
+        "INSERT IGNORE INTO TBL_ST_SIMBOX_CALLS (msisdn, EVENT_TIME) VALUES (%s, %s)",
         (msisdn, event_time)
     )
 
