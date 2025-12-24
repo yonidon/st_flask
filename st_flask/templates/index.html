@@ -109,6 +109,12 @@
         <button id="centerMainMapButton" ><i class="fas fa-crosshairs"></i> Center Map</button>
         </div>
 
+        <div class="map-lock-container" style="margin: 10px 0;">
+            <textarea id="latlngInput" rows="1" cols="30"
+                placeholder="Enter lat,lng (e.g. 32.0853,34.7818)"></textarea>
+            <button onclick="centerByLatLong()">Go to Lat/Long</button>
+        </div>
+
         <div id="mainMap" style="height: 400px; border-radius: 8px; margin-top: 20px;"></div>
     </div>
 
@@ -501,6 +507,31 @@
                         fetchTableData(); // refresh view
                     });
             }
+        }
+
+        function centerByLatLong() {
+            const input = document.getElementById("latlngInput").value.trim();
+            const parts = input.split(",");
+
+            if (parts.length !== 2) {
+                alert("Please enter latitude,longitude");
+                return;
+            }
+
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+
+            if (isNaN(lat) || isNaN(lng)) {
+                alert("Invalid numbers");
+                return;
+            }
+
+            mainMap.setView([lat, lng], mainMap.getZoom());
+            L.circleMarker([lat, lng], {
+                radius: 8,
+                color: 'red',
+                fillOpacity: 0.8
+            }).addTo(mainMap);
         }
 
         function updateModemStatus(data) {
